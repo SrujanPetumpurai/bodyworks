@@ -1,7 +1,5 @@
 ---
-// src/pages/daily-requirements.astro
-// NOTE: hardcoded placeholder data for the design. Swap `values` for a real
-// DB/API lookup later — the shape (nutrient id -> value string) stays the same.
+export const prerender = true;
 
 const bodyTypes = [
   { id: "male", label: "Male" },
@@ -10,48 +8,12 @@ const bodyTypes = [
 ];
 
 const ageGroups = [
-  { id: "children", label: "4–8" },
-  { id: "teenage", label: "9–18" },
-  { id: "adults", label: "19–50" },
-  { id: "older-adults", label: "51–70" },
-  { id: "elders", label: "70+" },
+  { id: "child", label: "4–8" },
+  { id: "teenager", label: "9–18" },
+  { id: "adult", label: "19–50" },
+  { id: "older_adult", label: "51–70" },
+  { id: "elderly", label: "70+" },
 ];
-
-// Fixed across demographics — how much a nutrient matters, and why.
-const nutrients = [
-  { id: "sleep", name: "Sleep", importance: 5, info: "Growth hormone release and memory consolidation both peak during deep sleep." },
-  { id: "protein", name: "Protein", importance: 5, info: "Supports muscle growth and tissue repair." },
-  { id: "iron", name: "Iron", importance: 4, info: "Needed for red blood cell production and oxygen transport." },
-  { id: "calcium", name: "Calcium", importance: 5, info: "Builds and maintains bone density." },
-  { id: "water", name: "Water", importance: 4, info: "Covers fluid lost through normal activity, temperature regulation, and exercise." },
-  { id: "vitaminD", name: "Vitamin D", importance: 3, info: "Helps the body absorb calcium properly." },
-  { id: "fiber", name: "Fiber", importance: 3, info: "Supports digestion and keeps blood sugar steady." },
-];
-
-// Only the amount varies by body type / age — placeholder numbers.
-const values: Record<string, Record<string, Record<string, string>>> = {
-  male: {
-    children: { sleep: "10–13 hrs", protein: "19 g", iron: "10 mg", calcium: "1,000 mg", water: "1.7 L", vitaminD: "15 mcg", fiber: "25 g" },
-    teenage: { sleep: "8–10 hrs", protein: "52 g", iron: "11 mg", calcium: "1,300 mg", water: "3.3 L", vitaminD: "15 mcg", fiber: "31 g" },
-    adults: { sleep: "7–9 hrs", protein: "56 g", iron: "8 mg", calcium: "1,000 mg", water: "3.7 L", vitaminD: "15 mcg", fiber: "38 g" },
-    "older-adults": { sleep: "7–9 hrs", protein: "56 g", iron: "8 mg", calcium: "1,000 mg", water: "3.7 L", vitaminD: "15 mcg", fiber: "30 g" },
-    elders: { sleep: "7–8 hrs", protein: "56 g", iron: "8 mg", calcium: "1,200 mg", water: "3.7 L", vitaminD: "20 mcg", fiber: "28 g" },
-  },
-  female: {
-    children: { sleep: "10–13 hrs", protein: "19 g", iron: "10 mg", calcium: "1,000 mg", water: "1.7 L", vitaminD: "15 mcg", fiber: "25 g" },
-    teenage: { sleep: "8–10 hrs", protein: "46 g", iron: "15 mg", calcium: "1,300 mg", water: "2.3 L", vitaminD: "15 mcg", fiber: "26 g" },
-    adults: { sleep: "7–9 hrs", protein: "46 g", iron: "18 mg", calcium: "1,000 mg", water: "2.7 L", vitaminD: "15 mcg", fiber: "25 g" },
-    "older-adults": { sleep: "7–9 hrs", protein: "46 g", iron: "8 mg", calcium: "1,200 mg", water: "2.7 L", vitaminD: "15 mcg", fiber: "21 g" },
-    elders: { sleep: "7–8 hrs", protein: "46 g", iron: "8 mg", calcium: "1,200 mg", water: "2.7 L", vitaminD: "20 mcg", fiber: "22 g" },
-  },
-  pregnant: {
-    children: { sleep: "8–10 hrs", protein: "71 g", iron: "27 mg", calcium: "1,000 mg", water: "3.0 L", vitaminD: "15 mcg", fiber: "28 g" },
-    teenage: { sleep: "8–10 hrs", protein: "71 g", iron: "27 mg", calcium: "1,000 mg", water: "3.0 L", vitaminD: "15 mcg", fiber: "28 g" },
-    adults: { sleep: "8–10 hrs", protein: "71 g", iron: "27 mg", calcium: "1,000 mg", water: "3.0 L", vitaminD: "15 mcg", fiber: "28 g" },
-    "older-adults": { sleep: "8–10 hrs", protein: "71 g", iron: "27 mg", calcium: "1,000 mg", water: "3.0 L", vitaminD: "15 mcg", fiber: "28 g" },
-    elders: { sleep: "8–10 hrs", protein: "71 g", iron: "27 mg", calcium: "1,000 mg", water: "3.0 L", vitaminD: "15 mcg", fiber: "28 g" },
-  },
-};
 ---
 
 <html lang="en">
@@ -102,11 +64,11 @@ const values: Record<string, Record<string, Record<string, string>>> = {
           <div class="advanced-panel" id="advanced-panel" hidden>
             <label class="mini-field">
               <span>Height (cm)</span>
-              <input type="number" placeholder="170" />
+              <input type="number" id="height-input" placeholder="170" />
             </label>
             <label class="mini-field">
               <span>Weight (kg)</span>
-              <input type="number" placeholder="65" />
+              <input type="number" id="weight-input" placeholder="65" />
             </label>
           </div>
         </div>
@@ -127,111 +89,251 @@ const values: Record<string, Record<string, Record<string, string>>> = {
           </div>
         </div>
         <ul class="nutrient-list" id="nutrient-list">
-          {nutrients.map((n) => (
-            <li class="nutrient-row" data-id={n.id} data-name={n.name.toLowerCase()}>
-              <button class="row-main" data-toggle={n.id}>
-                <span class="n-name">{n.name}</span>
-                <span class="n-value" data-value={n.id}></span>
-                <span class="n-stars" data-stars={n.importance} aria-label={`${n.importance} out of 5 importance`}></span>
-                <span class="n-arrow">›</span>
-              </button>
-              <div class="row-info" id={`info-${n.id}`} hidden>
-                <p>{n.info}</p>
-              </div>
-            </li>
-          ))}
+          <li class="loading-row">Loading…</li>
         </ul>
         <p class="no-results" id="no-results" hidden>No nutrients match your search.</p>
       </section>
     </main>
 
-    <script define:vars={{ values }}>
-      const state = { bodyType: "male", age: "teenage" };
+    <script>
+      // --- types ---
+      interface Requirement {
+        resolved: number | null;
+        valueType?: string;
+        min?: number;
+        max?: number;
+        unit: string;
+      }
+
+      interface NutrientSource {
+        name: string;
+        description?: string;
+      }
+
+      interface Nutrient {
+        name: string;
+        ready: boolean;
+        importance: number;
+        dailyIntake: Requirement;
+        bodyStore?: Requirement | null;
+        points: string[];
+        sources: NutrientSource[];
+      }
+
+      interface AppState {
+        bodyType: string;
+        ageBracket: string;
+        weightKg: number | undefined;
+        heightCm: number | undefined;
+      }
+
+      const state: AppState = {
+        bodyType: "male",
+        ageBracket: "teenager",
+        weightKg: undefined,
+        heightCm: undefined,
+      };
 
       // --- custom dropdowns (no native select, no arrow) ---
-      document.querySelectorAll(".dropdown").forEach((dd) => {
-        const key = dd.dataset.dropdown;
-        const pill = dd.querySelector(".pill");
-        const menu = dd.querySelector(".menu");
+      document.querySelectorAll<HTMLDivElement>(".dropdown").forEach((dd) => {
+        const key = dd.getAttribute("data-dropdown"); // "bodyType" | "age"
+        const pill = dd.querySelector<HTMLButtonElement>(".pill");
+        const menu = dd.querySelector<HTMLUListElement>(".menu");
+
+        if (!pill || !menu) return;
 
         pill.addEventListener("click", (e) => {
           e.stopPropagation();
-          document.querySelectorAll(".menu").forEach((m) => {
+          document.querySelectorAll<HTMLUListElement>(".menu").forEach((m) => {
             if (m !== menu) m.hidden = true;
           });
           menu.hidden = !menu.hidden;
         });
 
-        menu.querySelectorAll("button").forEach((opt) => {
-          opt.addEventListener("click", () => {
-            state[key] = opt.dataset.value;
+        menu.querySelectorAll<HTMLButtonElement>("button").forEach((opt) => {
+          opt.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const value = opt.dataset.value;
+            if (!value) return;
+            if (key === "bodyType") state.bodyType = value;
+            if (key === "age") state.ageBracket = value;
             pill.textContent = opt.textContent;
             menu.hidden = true;
-            render();
+            fetchAndRender();
           });
         });
       });
 
       document.addEventListener("click", () => {
-        document.querySelectorAll(".menu").forEach((m) => (m.hidden = true));
+        document.querySelectorAll<HTMLUListElement>(".menu").forEach((m) => (m.hidden = true));
       });
 
       // --- advanced height/weight toggle ---
-      const advToggle = document.getElementById("advanced-toggle");
-      const advPanel = document.getElementById("advanced-panel");
-      advToggle.addEventListener("click", () => {
-        const isHidden = advPanel.hidden;
-        advPanel.hidden = !isHidden;
-        advToggle.textContent = isHidden ? "− Hide height & weight" : "+ Add height & weight";
-      });
+      const advToggle = document.getElementById("advanced-toggle") as HTMLButtonElement | null;
+      const advPanel = document.getElementById("advanced-panel") as HTMLDivElement | null;
 
-      // --- stars: outline only, exact count, no dimmed fillers ---
-      const starIcon = () =>
+      if (advToggle && advPanel) {
+        advToggle.addEventListener("click", () => {
+          const isHidden = advPanel.hidden;
+          advPanel.hidden = !isHidden;
+          advToggle.textContent = isHidden ? "− Hide height & weight" : "+ Add height & weight";
+        });
+      }
+
+      const heightInput = document.getElementById("height-input") as HTMLInputElement | null;
+      const weightInput = document.getElementById("weight-input") as HTMLInputElement | null;
+
+      let debounceTimer: ReturnType<typeof setTimeout>;
+      function onMetricInput() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          const h = parseFloat(heightInput?.value ?? "");
+          const w = parseFloat(weightInput?.value ?? "");
+          state.heightCm = Number.isFinite(h) ? h : undefined;
+          state.weightKg = Number.isFinite(w) ? w : undefined;
+          fetchAndRender();
+        }, 400);
+      }
+      heightInput?.addEventListener("input", onMetricInput);
+      weightInput?.addEventListener("input", onMetricInput);
+
+      // --- fetch + render ---
+      const list = document.getElementById("nutrient-list") as HTMLUListElement | null;
+      const noResults = document.getElementById("no-results") as HTMLParagraphElement | null;
+      const searchInput = document.getElementById("nutrient-search") as HTMLInputElement | null;
+
+      async function fetchAndRender(): Promise<void> {
+        if (!list) return;
+
+        const params = new URLSearchParams({
+          bodyType: state.bodyType,
+          ageBracket: state.ageBracket,
+        });
+        if (state.weightKg !== undefined) params.set("weightKg", String(state.weightKg));
+        if (state.heightCm !== undefined) params.set("heightCm", String(state.heightCm));
+
+        list.innerHTML = `<li class="loading-row">Loading…</li>`;
+
+        try {
+          const res = await fetch(`/api/nutrients?${params.toString()}`);
+          if (!res.ok) {
+            list.innerHTML = `<li class="loading-row">Couldn't load nutrients — try again.</li>`;
+            return;
+          }
+          const nutrients: Nutrient[] = await res.json();
+          renderList(nutrients.filter((n) => n.ready));
+          applySearchFilter();
+        } catch (err) {
+          list.innerHTML = `<li class="loading-row">Couldn't load nutrients — try again.</li>`;
+        }
+      }
+
+      // Escape untrusted text before dropping it into innerHTML.
+      function escapeHtml(str: string): string {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function formatReq(req: Requirement | null | undefined): string {
+        if (!req) return "—";
+        if (req.valueType === "range" && req.max != null && req.min != null) {
+          const min = Number.isInteger(req.min) ? req.min : req.min.toFixed(1);
+          const max = Number.isInteger(req.max) ? req.max : req.max.toFixed(1);
+          return `${min}–${max} ${req.unit}`;
+        }
+        if (req.resolved == null) return "—";
+        const value = Number.isInteger(req.resolved) ? req.resolved : req.resolved.toFixed(1);
+        return `${value} ${req.unit}`;
+      }
+
+      const starIcon = (): string =>
         `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#c9a45c" stroke-width="1.6">
           <path d="M12 2.5l2.9 6.3 6.9.7-5.2 4.7 1.5 6.8L12 17.6 5.9 21l1.5-6.8-5.2-4.7 6.9-.7z" />
         </svg>`;
 
-      document.querySelectorAll(".n-stars").forEach((el) => {
-        const count = parseInt(el.dataset.stars, 10);
-        el.innerHTML = starIcon().repeat(count);
-      });
+      function renderList(nutrients: Nutrient[]): void {
+        if (!list) return;
+        list.innerHTML = "";
 
-      function render() {
-        const data = values[state.bodyType]?.[state.age];
-        if (!data) return;
-        document.querySelectorAll("[data-value]").forEach((el) => {
-          const key = el.getAttribute("data-value");
-          if (key in data) el.textContent = data[key];
+        if (nutrients.length === 0) {
+          list.innerHTML = `<li class="loading-row">No data for this selection yet.</li>`;
+          return;
+        }
+
+        nutrients.forEach((n) => {
+          const li = document.createElement("li");
+          li.className = "nutrient-row";
+          li.dataset.name = n.name.toLowerCase();
+
+          const bodyStoreValue = n.bodyStore ? formatReq(n.bodyStore) : null;
+          const bodyStoreLine =
+            bodyStoreValue && bodyStoreValue !== "—"
+              ? `<p class="n-bodystore"><strong>Body should contain:</strong> ${escapeHtml(bodyStoreValue)}</p>`
+              : "";
+
+          const pointsHtml = n.points.map((p) => `<li>${escapeHtml(p)}</li>`).join("");
+          const sourcesHtml = n.sources
+            .map(
+              (s) =>
+                `<li><strong>${escapeHtml(s.name)}</strong>${
+                  s.description ? ` — ${escapeHtml(s.description)}` : ""
+                }</li>`
+            )
+            .join("");
+
+          li.innerHTML = `
+            <button class="row-main" type="button" data-toggle>
+              <span class="n-name">${escapeHtml(n.name)}</span>
+              <span class="n-value">${escapeHtml(formatReq(n.dailyIntake))}</span>
+              <span class="n-stars"></span>
+              <span class="n-arrow">›</span>
+            </button>
+            <div class="row-info" hidden>
+              ${bodyStoreLine}
+              <ul class="n-points">${pointsHtml}</ul>
+              ${sourcesHtml ? `<p class="n-sources-label">Sources:</p><ul class="n-sources">${sourcesHtml}</ul>` : ""}
+            </div>
+          `;
+
+          const starsEl = li.querySelector<HTMLSpanElement>(".n-stars");
+          if (starsEl) {
+            starsEl.innerHTML = starIcon().repeat(n.importance);
+            starsEl.setAttribute("aria-label", `${n.importance} out of 5 importance`);
+          }
+
+          const toggleBtn = li.querySelector<HTMLButtonElement>("[data-toggle]");
+          const info = li.querySelector<HTMLDivElement>(".row-info");
+          if (toggleBtn && info) {
+            toggleBtn.addEventListener("click", () => {
+              const isOpen = !info.hidden;
+              info.hidden = isOpen;
+              li.classList.toggle("open", !isOpen);
+            });
+          }
+
+          list.appendChild(li);
         });
       }
-      render();
 
-      // --- row expand/collapse ---
-      document.querySelectorAll(".row-main").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const id = btn.getAttribute("data-toggle");
-          const info = document.getElementById(`info-${id}`);
-          const row = btn.closest(".nutrient-row");
-          const isOpen = !info.hidden;
-          info.hidden = isOpen;
-          row.classList.toggle("open", !isOpen);
-        });
-      });
-
-      // --- search filter ---
-      const searchInput = document.getElementById("nutrient-search");
-      const rows = document.querySelectorAll(".nutrient-row");
-      const noResults = document.getElementById("no-results");
-      searchInput.addEventListener("input", () => {
+      function applySearchFilter(): void {
+        if (!list || !searchInput || !noResults) return;
         const q = searchInput.value.trim().toLowerCase();
         let visibleCount = 0;
-        rows.forEach((row) => {
-          const match = row.dataset.name.includes(q);
+        list.querySelectorAll<HTMLLIElement>(".nutrient-row").forEach((row) => {
+          const match = (row.dataset.name ?? "").includes(q);
           row.hidden = !match;
           if (match) visibleCount++;
         });
-        noResults.hidden = visibleCount !== 0;
-      });
+        noResults.hidden = visibleCount !== 0 || list.querySelector(".loading-row") !== null;
+      }
+
+      searchInput?.addEventListener("input", applySearchFilter);
+
+      fetchAndRender();
     </script>
 
     <style>
@@ -456,6 +558,12 @@ const values: Record<string, Record<string, Record<string, string>>> = {
         gap: 0.5rem;
       }
 
+      .loading-row {
+        padding: 0.9rem 1rem;
+        color: #8a7c68;
+        font-size: 0.9rem;
+      }
+
       .nutrient-row {
         border: 1.5px solid #e0c99a;
         border-radius: 12px;
@@ -519,10 +627,33 @@ const values: Record<string, Record<string, Record<string, string>>> = {
       }
 
       .row-info p {
-        margin: 0;
+        margin: 0 0 0.5rem;
         font-size: 0.88rem;
         line-height: 1.45;
         color: #6b5c4d;
+      }
+
+      .row-info .n-bodystore {
+        color: #4a3f36;
+        font-weight: 600;
+      }
+
+      .row-info ul {
+        margin: 0 0 0.6rem;
+        padding-left: 1.1rem;
+      }
+
+      .row-info li {
+        font-size: 0.88rem;
+        line-height: 1.45;
+        color: #6b5c4d;
+        margin-bottom: 0.25rem;
+      }
+
+      .n-sources-label {
+        font-weight: 600;
+        color: #4a3f36;
+        margin-bottom: 0.3rem;
       }
 
       .no-results {
