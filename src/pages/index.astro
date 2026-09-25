@@ -1,17 +1,379 @@
 ---
-
+const panels = [
+  {
+    id: "workouts",
+    title: "Workouts for every muscle",
+    desc: "Pick a muscle and get the exercises that train it, with form cues and rep ranges for every level.",
+    cta: "Browse workouts",
+    href: "/workouts",
+    image: "/squat2.png",
+    alt: "Anatomy illustration of the muscles working during a single-leg squat",
+  },
+  {
+    id: "daily",
+    title: "Daily requirements",
+    desc: "See how much protein, water, calories and sleep your body needs each day, based on your goal.",
+    cta: "Check my numbers",
+    href: "/daily-requirements",
+    image: "/dailyRequirements/nutrients_nobg.png",
+    alt: "Illustrated vitamins, fruit, greens and other nutrients",
+  },
+  {
+    id: "recipes",
+    title: "Food recipes",
+    desc: "Simple, high-protein meals with macros listed, from quick breakfasts to post-workout dinners.",
+    cta: "Find a recipe",
+    href: "/recipes",
+    image: "/foodRecipes/landingPage_noBg.png",
+    alt: "Illustrated high-protein meals",
+  },
+];
 ---
 
+<!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Train, fuel, repeat</title>
+    <meta name="description" content="Muscle-by-muscle workouts, daily nutrition targets and recipes in one place." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,700..900&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="logo-slot" aria-hidden="false">
+      <img src="/logo.png" alt="Bodyworks" />
+    </div>
+    <main class="panels">
+      {
+        panels.map((p, i) => (
+          <a class={`panel panel--${p.id}`} href={p.href} style={`--i:${i}`}>
+            <div class="copy">
+              <h2>{p.title}</h2>
+              <p>{p.desc}</p>
+              <span class="cta">{p.cta}</span>
+            </div>
+
+            <div class="media">
+              {p.image ? (
+                <img src={p.image} alt={p.alt} loading="eager" />
+              ) : (
+                <div class="placeholder" aria-hidden="true">Image coming soon</div>
+              )}
+            </div>
+          </a>
+        ))
+      }
+    </main>
+  </body>
 </html>
+
+<style is:global>
+  :root {
+    --paper: #fbf4e4;
+    --ink: #1a1210;
+    --font-display: "Archivo", system-ui, sans-serif;
+    --font-body: "Hanken Grotesk", system-ui, sans-serif;
+    --gap: 14px;
+    --logo-h: 180px;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    height: 100%;
+  }
+
+  /* ---- Logo, sitting in the gap the shortened middle panel leaves ---- */
+  .logo-slot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: var(--logo-h);
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .logo-slot img {
+    height: calc(var(--logo-h) - 20px);
+    width: auto;
+    mix-blend-mode: multiply;
+  }
+
+  /* faint print grain over the whole page */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0.3;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.07 0 0 0 0 0.06 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .panels {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: var(--logo-h) 1fr;
+    gap: var(--gap);
+    padding: var(--gap);
+    height: 100dvh;
+  }
+
+  /* outer panels run the full height; only the middle one is shortened */
+  .panel--workouts,
+  .panel--recipes {
+    grid-row: 1 / span 2;
+  }
+  .panel--daily {
+    grid-row: 2;
+  }
+
+  /* ---- Panel: one comic frame each ---- */
+  .panel {
+    --rgb: 242, 96, 63;
+    --tone: rgb(var(--rgb));
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    color: inherit;
+    text-decoration: none;
+    background: linear-gradient(
+      to bottom,
+      var(--tone) 0%,
+      color-mix(in srgb, var(--tone) 55%, var(--paper)) 100%
+    );
+    border: 4px solid var(--ink);
+    transition:
+      transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1),
+      box-shadow 0.35s ease,
+      opacity 0.35s ease,
+      filter 0.35s ease;
+  }
+
+  .panel--workouts { --rgb: 242, 96, 63; }   /* tomato */
+  .panel--daily    { --rgb: 246, 191, 58; }  /* sun */
+  .panel--recipes  { --rgb: 110, 184, 122; } /* leaf */
+
+  /* Halftone dots, fading out down the copy area */
+  .panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 46%;
+    background: radial-gradient(circle, rgba(26, 18, 16, 0.18) 1.4px, transparent 1.9px) 0 0 / 9px 9px;
+    -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
+    mask-image: linear-gradient(to bottom, #000, transparent);
+    z-index: -1;
+  }
+
+  /* Sunburst rays behind the image; they turn on hover */
+  .panel::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 72%;
+    width: 150%;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    rotate: 0deg;
+    background: repeating-conic-gradient(rgba(255, 255, 255, 0.36) 0 6deg, transparent 6deg 12deg);
+    -webkit-mask-image: radial-gradient(closest-side, #000 25%, transparent 100%);
+    mask-image: radial-gradient(closest-side, #000 25%, transparent 100%);
+    transition: rotate 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+    z-index: -1;
+  }
+
+  .panel:is(:hover, :focus-visible) {
+    outline: none;
+    z-index: 1;
+    transform: translate(-4px, -4px);
+    box-shadow:
+      8px 8px 0 var(--ink),
+      0 0 80px rgba(var(--rgb), 0.6);
+  }
+  .panel:is(:hover, :focus-visible)::after {
+    rotate: 14deg;
+  }
+
+  @media (hover: hover) {
+    .panels:has(.panel:hover) .panel:not(:hover) {
+      opacity: 0.75;
+      filter: saturate(0.75);
+    }
+  }
+
+  /* ---- Copy ---- */
+  .copy {
+    flex: 0 0 auto;
+    padding: clamp(1.4rem, 2.6vw, 2.6rem) clamp(1.4rem, 2.4vw, 2.4rem) clamp(0.5rem, 1.2vw, 1.2rem);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.9rem;
+  }
+
+  .copy h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 75%;
+    font-size: clamp(2.4rem, 4.2vw, 4.4rem);
+    line-height: 0.92;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .copy p {
+    margin: 0;
+    max-width: 34ch;
+    font-size: clamp(1rem, 1.1vw, 1.12rem);
+    line-height: 1.5;
+    font-weight: 500;
+    color: rgba(26, 18, 16, 0.82);
+  }
+
+  .cta {
+    margin-top: 0.3rem;
+    padding: 0.6rem 1.15rem;
+    font-weight: 600;
+    font-size: 0.98rem;
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    box-shadow: 3px 3px 0 var(--ink);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+  .panel:is(:hover, :focus-visible) .cta {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--ink);
+    background: #fff;
+  }
+
+  /* ---- Media ---- */
+  /* flex: 1 1 auto + min-height: 0 is what actually lets this box shrink
+     to the space left over instead of forcing overflow. Grid's
+     minmax(0, 1fr) alone doesn't do that for an <img> child, because the
+     img keeps its own intrinsic min-height and pokes past the track —
+     which is what was getting sliced off by .panel's overflow: hidden. */
+  .media {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem 1rem;
+  }
+
+  /* max-width/max-height (not a fixed height: 100%) + width/height: auto
+     is the reliable way to guarantee the ENTIRE image is always shown,
+     scaled down to whatever fits — never cropped. */
+  .media img {
+    display: block;
+    max-width: 60%;
+    max-height: 300px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+    animation: pop 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards;
+    animation-delay: calc(var(--i) * 120ms);
+  }
+  /* squat2.png has a white backdrop: multiply melts it into the panel.
+     Delete this rule if the PNG is transparent. */
+  .panel--workouts .media img {
+    mix-blend-mode: multiply;
+  }
+  /* transparent PNGs get a hard comic drop shadow */
+  .panel--daily .media img,
+  .panel--recipes .media img {
+    filter: drop-shadow(5px 5px 0 var(--ink));
+  }
+  /* the recipe pan photo is a wide, squat image so it reads visually
+     bigger than the tall, narrow squat illustration at the same
+     max-width — cap its width tighter to match the two visually. */
+  .panel--recipes .media img {
+    max-width: 50%;
+  }
+  /* hover grows the image slightly; harmless if it clips a few px
+     since the panel itself lifts and glows at the same time */
+  .panel:is(:hover, :focus-visible) .media img {
+    transform: scale(1.06) rotate(-2deg);
+  }
+
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: scale(0.88) translateY(16px);
+    }
+  }
+
+  .placeholder {
+    align-self: stretch;
+    margin: 0 0.5rem 0.5rem;
+    display: grid;
+    place-content: center;
+    border: 3px dashed var(--ink);
+    border-radius: 1rem;
+    font-weight: 500;
+  }
+
+  /* desktop: reserve two heading lines so text and buttons line up across panels */
+  @media (min-width: 861px) {
+    .copy h2 {
+      min-height: 1.84em;
+    }
+  }
+
+  /* ---- Small screens: stack the panels ---- */
+  @media (max-width: 860px) {
+    .panels {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      height: auto;
+      padding-top: calc(var(--logo-h) + var(--gap));
+    }
+    .panel,
+    .panel--workouts,
+    .panel--recipes,
+    .panel--daily {
+      grid-row: auto;
+      min-height: 44rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation: none !important;
+    }
+    .panel:hover .media img {
+      transform: none;
+    }
+    .panel:hover::after {
+      rotate: 0deg;
+    }
+  }
+</style>

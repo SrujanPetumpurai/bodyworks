@@ -1,0 +1,536 @@
+---
+// src/pages/daily-requirements.astro
+// NOTE: hardcoded placeholder data for the design. Swap `values` for a real
+// DB/API lookup later — the shape (nutrient id -> value string) stays the same.
+
+const bodyTypes = [
+  { id: "male", label: "Male" },
+  { id: "female", label: "Female" },
+  { id: "pregnant", label: "Pregnant Women" },
+];
+
+const ageGroups = [
+  { id: "children", label: "4–8" },
+  { id: "teenage", label: "9–18" },
+  { id: "adults", label: "19–50" },
+  { id: "older-adults", label: "51–70" },
+  { id: "elders", label: "70+" },
+];
+
+// Fixed across demographics — how much a nutrient matters, and why.
+const nutrients = [
+  { id: "sleep", name: "Sleep", importance: 5, info: "Growth hormone release and memory consolidation both peak during deep sleep." },
+  { id: "protein", name: "Protein", importance: 5, info: "Supports muscle growth and tissue repair." },
+  { id: "iron", name: "Iron", importance: 4, info: "Needed for red blood cell production and oxygen transport." },
+  { id: "calcium", name: "Calcium", importance: 5, info: "Builds and maintains bone density." },
+  { id: "water", name: "Water", importance: 4, info: "Covers fluid lost through normal activity, temperature regulation, and exercise." },
+  { id: "vitaminD", name: "Vitamin D", importance: 3, info: "Helps the body absorb calcium properly." },
+  { id: "fiber", name: "Fiber", importance: 3, info: "Supports digestion and keeps blood sugar steady." },
+];
+
+// Only the amount varies by body type / age — placeholder numbers.
+const values: Record<string, Record<string, Record<string, string>>> = {
+  male: {
+    children: { sleep: "10–13 hrs", protein: "19 g", iron: "10 mg", calcium: "1,000 mg", water: "1.7 L", vitaminD: "15 mcg", fiber: "25 g" },
+    teenage: { sleep: "8–10 hrs", protein: "52 g", iron: "11 mg", calcium: "1,300 mg", water: "3.3 L", vitaminD: "15 mcg", fiber: "31 g" },
+    adults: { sleep: "7–9 hrs", protein: "56 g", iron: "8 mg", calcium: "1,000 mg", water: "3.7 L", vitaminD: "15 mcg", fiber: "38 g" },
+    "older-adults": { sleep: "7–9 hrs", protein: "56 g", iron: "8 mg", calcium: "1,000 mg", water: "3.7 L", vitaminD: "15 mcg", fiber: "30 g" },
+    elders: { sleep: "7–8 hrs", protein: "56 g", iron: "8 mg", calcium: "1,200 mg", water: "3.7 L", vitaminD: "20 mcg", fiber: "28 g" },
+  },
+  female: {
+    children: { sleep: "10–13 hrs", protein: "19 g", iron: "10 mg", calcium: "1,000 mg", water: "1.7 L", vitaminD: "15 mcg", fiber: "25 g" },
+    teenage: { sleep: "8–10 hrs", protein: "46 g", iron: "15 mg", calcium: "1,300 mg", water: "2.3 L", vitaminD: "15 mcg", fiber: "26 g" },
+    adults: { sleep: "7–9 hrs", protein: "46 g", iron: "18 mg", calcium: "1,000 mg", water: "2.7 L", vitaminD: "15 mcg", fiber: "25 g" },
+    "older-adults": { sleep: "7–9 hrs", protein: "46 g", iron: "8 mg", calcium: "1,200 mg", water: "2.7 L", vitaminD: "15 mcg", fiber: "21 g" },
+    elders: { sleep: "7–8 hrs", protein: "46 g", iron: "8 mg", calcium: "1,200 mg", water: "2.7 L", vitaminD: "20 mcg", fiber: "22 g" },
+  },
+  pregnant: {
+    children: { sleep: "8–10 hrs", protein: "71 g", iron: "27 mg", calcium: "1,000 mg", water: "3.0 L", vitaminD: "15 mcg", fiber: "28 g" },
+    teenage: { sleep: "8–10 hrs", protein: "71 g", iron: "27 mg", calcium: "1,000 mg", water: "3.0 L", vitaminD: "15 mcg", fiber: "28 g" },
+    adults: { sleep: "8–10 hrs", protein: "71 g", iron: "27 mg", calcium: "1,000 mg", water: "3.0 L", vitaminD: "15 mcg", fiber: "28 g" },
+    "older-adults": { sleep: "8–10 hrs", protein: "71 g", iron: "27 mg", calcium: "1,000 mg", water: "3.0 L", vitaminD: "15 mcg", fiber: "28 g" },
+    elders: { sleep: "8–10 hrs", protein: "71 g", iron: "27 mg", calcium: "1,000 mg", water: "3.0 L", vitaminD: "15 mcg", fiber: "28 g" },
+  },
+};
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Daily Requirements — bodyworks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main class="page">
+      <header class="intro">
+        <h1>Daily Requirements</h1>
+        <p>Set your body type and age to see personalized nutrition and rest targets.</p>
+      </header>
+
+      <section class="profile-card">
+        <div class="selectors">
+          <div class="field">
+            <span class="field-label">Body Type:</span>
+            <div class="dropdown" data-dropdown="bodyType">
+              <button class="pill" type="button">Male</button>
+              <ul class="menu" hidden>
+                {bodyTypes.map((b) => (
+                  <li><button type="button" data-value={b.id}>{b.label}</button></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div class="field">
+            <span class="field-label">Age:</span>
+            <div class="dropdown" data-dropdown="age">
+              <button class="pill" type="button">9–18</button>
+              <ul class="menu" hidden>
+                {ageGroups.map((a) => (
+                  <li><button type="button" data-value={a.id}>{a.label}</button></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <button class="advanced-toggle" id="advanced-toggle" type="button">+ Add height &amp; weight</button>
+          <div class="advanced-panel" id="advanced-panel" hidden>
+            <label class="mini-field">
+              <span>Height (cm)</span>
+              <input type="number" placeholder="170" />
+            </label>
+            <label class="mini-field">
+              <span>Weight (kg)</span>
+              <input type="number" placeholder="65" />
+            </label>
+          </div>
+        </div>
+
+        <div class="profile-icon" aria-hidden="true">
+          <svg viewBox="0 0 64 64" width="34" height="34">
+            <circle cx="32" cy="22" r="14" fill="#1a1310" />
+            <path d="M8 58c0-14 10.7-22 24-22s24 8 24 22" fill="#1a1310" />
+          </svg>
+        </div>
+      </section>
+
+      <section class="table-card">
+        <div class="table-header">
+          <h2>Your Daily Targets</h2>
+          <div class="search-wrap">
+            <input type="text" id="nutrient-search" placeholder="Search nutrients…" />
+          </div>
+        </div>
+        <ul class="nutrient-list" id="nutrient-list">
+          {nutrients.map((n) => (
+            <li class="nutrient-row" data-id={n.id} data-name={n.name.toLowerCase()}>
+              <button class="row-main" data-toggle={n.id}>
+                <span class="n-name">{n.name}</span>
+                <span class="n-value" data-value={n.id}></span>
+                <span class="n-stars" data-stars={n.importance} aria-label={`${n.importance} out of 5 importance`}></span>
+                <span class="n-arrow">›</span>
+              </button>
+              <div class="row-info" id={`info-${n.id}`} hidden>
+                <p>{n.info}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p class="no-results" id="no-results" hidden>No nutrients match your search.</p>
+      </section>
+    </main>
+
+    <script define:vars={{ values }}>
+      const state = { bodyType: "male", age: "teenage" };
+
+      // --- custom dropdowns (no native select, no arrow) ---
+      document.querySelectorAll(".dropdown").forEach((dd) => {
+        const key = dd.dataset.dropdown;
+        const pill = dd.querySelector(".pill");
+        const menu = dd.querySelector(".menu");
+
+        pill.addEventListener("click", (e) => {
+          e.stopPropagation();
+          document.querySelectorAll(".menu").forEach((m) => {
+            if (m !== menu) m.hidden = true;
+          });
+          menu.hidden = !menu.hidden;
+        });
+
+        menu.querySelectorAll("button").forEach((opt) => {
+          opt.addEventListener("click", () => {
+            state[key] = opt.dataset.value;
+            pill.textContent = opt.textContent;
+            menu.hidden = true;
+            render();
+          });
+        });
+      });
+
+      document.addEventListener("click", () => {
+        document.querySelectorAll(".menu").forEach((m) => (m.hidden = true));
+      });
+
+      // --- advanced height/weight toggle ---
+      const advToggle = document.getElementById("advanced-toggle");
+      const advPanel = document.getElementById("advanced-panel");
+      advToggle.addEventListener("click", () => {
+        const isHidden = advPanel.hidden;
+        advPanel.hidden = !isHidden;
+        advToggle.textContent = isHidden ? "− Hide height & weight" : "+ Add height & weight";
+      });
+
+      // --- stars: outline only, exact count, no dimmed fillers ---
+      const starIcon = () =>
+        `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#c9a45c" stroke-width="1.6">
+          <path d="M12 2.5l2.9 6.3 6.9.7-5.2 4.7 1.5 6.8L12 17.6 5.9 21l1.5-6.8-5.2-4.7 6.9-.7z" />
+        </svg>`;
+
+      document.querySelectorAll(".n-stars").forEach((el) => {
+        const count = parseInt(el.dataset.stars, 10);
+        el.innerHTML = starIcon().repeat(count);
+      });
+
+      function render() {
+        const data = values[state.bodyType]?.[state.age];
+        if (!data) return;
+        document.querySelectorAll("[data-value]").forEach((el) => {
+          const key = el.getAttribute("data-value");
+          if (key in data) el.textContent = data[key];
+        });
+      }
+      render();
+
+      // --- row expand/collapse ---
+      document.querySelectorAll(".row-main").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-toggle");
+          const info = document.getElementById(`info-${id}`);
+          const row = btn.closest(".nutrient-row");
+          const isOpen = !info.hidden;
+          info.hidden = isOpen;
+          row.classList.toggle("open", !isOpen);
+        });
+      });
+
+      // --- search filter ---
+      const searchInput = document.getElementById("nutrient-search");
+      const rows = document.querySelectorAll(".nutrient-row");
+      const noResults = document.getElementById("no-results");
+      searchInput.addEventListener("input", () => {
+        const q = searchInput.value.trim().toLowerCase();
+        let visibleCount = 0;
+        rows.forEach((row) => {
+          const match = row.dataset.name.includes(q);
+          row.hidden = !match;
+          if (match) visibleCount++;
+        });
+        noResults.hidden = visibleCount !== 0;
+      });
+    </script>
+
+    <style>
+      :global(body) {
+        margin: 0;
+      }
+
+      .page {
+        font-family: "Nunito", sans-serif;
+        background: #f2ead9;
+        min-height: 100vh;
+        padding: 3rem 1.5rem 5rem;
+        box-sizing: border-box;
+        color: #1a1310;
+      }
+
+      .intro {
+        max-width: 720px;
+        margin: 0 auto 1.5rem;
+      }
+
+      .intro h1 {
+        font-family: "Baloo 2", sans-serif;
+        font-weight: 700;
+        font-size: 2rem;
+        margin: 0 0 0.4rem;
+      }
+
+      .intro p {
+        margin: 0;
+        color: #6b5c4d;
+        font-size: 1rem;
+      }
+
+      .profile-card {
+        max-width: 720px;
+        margin: 0 auto 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1.5rem;
+        border: 2px solid #1a1310;
+        border-radius: 16px;
+        background: #fff8ec;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 3px 3px 0 #1a1310;
+      }
+
+      .selectors {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .field {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .field-label {
+        font-family: "Baloo 2", sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        min-width: 90px;
+      }
+
+      .dropdown {
+        position: relative;
+      }
+
+      .pill {
+        font-family: "Baloo 2", sans-serif;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #1a1310;
+        background: #f3e9d4;
+        border: 1.5px solid #d9c6a3;
+        border-radius: 999px;
+        padding: 0.35rem 1rem;
+        cursor: pointer;
+        appearance: none;
+      }
+
+      .pill:hover {
+        background: #ede0c2;
+      }
+
+      .menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        min-width: 150px;
+        margin: 0;
+        padding: 0.35rem;
+        list-style: none;
+        background: #fff8ec;
+        border: 1.5px solid #d9c6a3;
+        border-radius: 12px;
+        box-shadow: 3px 3px 0 rgba(26, 19, 16, 0.15);
+        z-index: 10;
+      }
+
+      .menu button {
+        width: 100%;
+        text-align: left;
+        border: none;
+        background: transparent;
+        font-family: "Nunito", sans-serif;
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 0.45rem 0.6rem;
+        border-radius: 8px;
+        cursor: pointer;
+        color: #1a1310;
+      }
+
+      .menu button:hover {
+        background: #f3e9d4;
+      }
+
+      .advanced-toggle {
+        align-self: flex-start;
+        border: none;
+        background: none;
+        color: #a17c3e;
+        font-family: "Nunito", sans-serif;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        padding: 0.2rem 0;
+      }
+
+      .advanced-toggle:hover {
+        text-decoration: underline;
+      }
+
+      .advanced-panel {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.25rem;
+      }
+
+      .mini-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        font-size: 0.78rem;
+        color: #8a7c68;
+      }
+
+      .mini-field input {
+        width: 90px;
+        font-family: "Nunito", sans-serif;
+        font-size: 0.9rem;
+        padding: 0.35rem 0.5rem;
+        border-radius: 8px;
+        border: 1.5px solid #d9c6a3;
+        background: #faf5e8;
+      }
+
+      .profile-icon {
+        flex-shrink: 0;
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        background: #f3e9d4;
+        border: 2px solid #1a1310;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      .table-card {
+        max-width: 720px;
+        margin: 0 auto;
+        border: 2px solid #1a1310;
+        border-radius: 16px;
+        background: #fff8ec;
+        padding: 1.5rem;
+        box-shadow: 3px 3px 0 #1a1310;
+      }
+
+      .table-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .table-header h2 {
+        font-family: "Baloo 2", sans-serif;
+        font-weight: 700;
+        font-size: 1.2rem;
+        margin: 0;
+      }
+
+      .search-wrap input {
+        font-family: "Nunito", sans-serif;
+        font-size: 0.9rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        border: 1.5px solid #d9c6a3;
+        background: #faf5e8;
+        width: 180px;
+      }
+
+      .search-wrap input:focus {
+        outline: none;
+        border-color: #c9a45c;
+      }
+
+      .nutrient-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .nutrient-row {
+        border: 1.5px solid #e0c99a;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fdf3de;
+      }
+
+      .row-main {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 110px 1fr 1.25rem;
+        align-items: center;
+        gap: 0.5rem;
+        border: none;
+        background: transparent;
+        padding: 0.8rem 1rem;
+        cursor: pointer;
+        font-family: "Nunito", sans-serif;
+        text-align: left;
+      }
+
+      .row-main:hover {
+        background: #f6ead2;
+      }
+
+      .n-name {
+        font-family: "Baloo 2", sans-serif;
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+
+      .n-value {
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-align: center;
+        color: #4a3f36;
+      }
+
+      .n-stars {
+        display: flex;
+        justify-content: flex-end;
+        gap: 2px;
+      }
+
+      .n-arrow {
+        font-size: 1.3rem;
+        color: #8a7c68;
+        transition: transform 0.15s ease;
+        justify-self: end;
+      }
+
+      .nutrient-row.open .n-arrow {
+        transform: rotate(90deg);
+      }
+
+      .row-info {
+        padding: 0 1rem 0.9rem 1rem;
+        border-top: 1px dashed #e0c99a;
+        margin-top: -0.3rem;
+        padding-top: 0.6rem;
+      }
+
+      .row-info p {
+        margin: 0;
+        font-size: 0.88rem;
+        line-height: 1.45;
+        color: #6b5c4d;
+      }
+
+      .no-results {
+        text-align: center;
+        color: #8a7c68;
+        font-size: 0.9rem;
+        margin: 1rem 0 0;
+      }
+    </style>
+  </body>
+</html>
