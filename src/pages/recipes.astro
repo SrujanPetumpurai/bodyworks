@@ -1,0 +1,328 @@
+---
+export const prerender = false;
+import RecipesBrowser from "../components/recipes/RecipesBrowser";
+import { listFoods, listRecipesWithIngredients } from "../db/recipes";
+
+const [foods, recipes] = await Promise.all([listFoods(), listRecipesWithIngredients()]);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recipes — bodyworks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main class="page">
+      <header class="intro">
+        <h1>Recipes</h1>
+        <p>Pick what you've got, find something to cook.</p>
+      </header>
+
+      <RecipesBrowser foods={foods} recipes={recipes} client:load />
+    </main>
+  </body>
+
+  <style is:global>
+    :root {
+      --bg: #fff9f0;
+      --ink: #16211d;
+      --sub: #54665f;
+      --accent: #ff6b5b;
+      --accent2: #f4a300;
+      --accent3: #1f6f5c;
+      --card: #ffffff;
+      --chip: #eaf3ef;
+      --chip-ink: #1f6f5c;
+      --font-head: "Fredoka", sans-serif;
+      --font-body: "Nunito", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+    }
+
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+      box-sizing: border-box;
+    }
+
+    .intro {
+      margin-bottom: 2rem;
+    }
+
+    .intro h1 {
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 2.6rem;
+      margin: 0 0 0.35rem;
+      text-shadow: 3px 3px 0 var(--accent2);
+    }
+
+    .intro p {
+      margin: 0;
+      color: var(--sub);
+      font-size: 1.05rem;
+      max-width: 46ch;
+    }
+
+    /* ---- ingredient combobox ---- */
+    .filter-block {
+      margin-bottom: 2.2rem;
+      position: relative;
+    }
+
+    .filter-label {
+      font-family: var(--font-head);
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .combobox {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem;
+      background: #fff;
+      border: 2px solid #e4dcc8;
+      border-radius: 14px;
+      padding: 0.5rem 0.6rem;
+    }
+
+    .combobox:focus-within {
+      border-color: var(--accent3);
+    }
+
+    .ing-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--accent3);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.82rem;
+      border-radius: 999px;
+      padding: 0.3rem 0.5rem 0.3rem 0.75rem;
+    }
+
+    .ing-pill button {
+      border: none;
+      background: rgba(255, 255, 255, 0.25);
+      color: #fff;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      line-height: 1;
+      font-size: 0.7rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .combobox input {
+      flex: 1;
+      min-width: 140px;
+      border: none;
+      outline: none;
+      font-family: var(--font-body);
+      font-size: 0.92rem;
+      padding: 0.35rem 0.3rem;
+      background: transparent;
+    }
+
+    .combobox input::placeholder {
+      color: #a7ab9f;
+    }
+
+    .ing-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      z-index: 10;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 14px 28px -12px rgba(22, 33, 29, 0.28);
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 0.35rem;
+    }
+
+    .ing-option {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.7rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .ing-option:hover,
+    .ing-option.highlighted {
+      background: var(--chip);
+    }
+
+    .ing-option .count {
+      font-size: 0.75rem;
+      color: var(--sub);
+      font-weight: 600;
+    }
+
+    .ing-empty {
+      padding: 0.6rem 0.7rem;
+      color: var(--sub);
+      font-size: 0.85rem;
+    }
+
+    /* ---- recipe grid ---- */
+    .result-count {
+      color: var(--sub);
+      font-size: 0.88rem;
+      margin: 0 0 1rem;
+      font-weight: 600;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.1rem;
+    }
+
+    @media (max-width: 620px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      box-shadow: 0 10px 24px -16px rgba(22, 33, 29, 0.3);
+    }
+
+    .card-media {
+      height: 120px;
+      border-radius: 44% 56% 62% 38% / 50% 42% 58% 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.1rem;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      overflow: hidden;
+    }
+
+    .card-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .card h3 {
+      font-family: var(--font-head);
+      margin: 0;
+      font-size: 1.15rem;
+    }
+
+    .card p.desc {
+      margin: 0;
+      color: var(--sub);
+      font-size: 0.87rem;
+      line-height: 1.4;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--sub);
+    }
+
+    .stars {
+      color: var(--accent2);
+      letter-spacing: 1px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+
+    .tag {
+      font-size: 0.72rem;
+      background: var(--chip);
+      color: var(--chip-ink);
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    .tag.matched {
+      background: var(--accent3);
+      color: #fff;
+    }
+
+    .card-author {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.1rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid #f1ecdf;
+    }
+
+    .avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-family: var(--font-head);
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .card-author span:last-child {
+      font-size: 0.8rem;
+      color: var(--sub);
+      font-weight: 600;
+    }
+
+    .no-results {
+      color: var(--sub);
+      padding: 2rem 0;
+      text-align: center;
+    }
+  </style>
+</html>

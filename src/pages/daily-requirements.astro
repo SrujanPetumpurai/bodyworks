@@ -1,6 +1,5 @@
 ---
 export const prerender = true;
-
 const bodyTypes = [
   { id: "male", label: "Male" },
   { id: "female", label: "Female" },
@@ -29,12 +28,12 @@ const ageGroups = [
     />
   </head>
   <body>
+    
     <main class="page">
       <header class="intro">
         <h1>Daily Requirements</h1>
         <p>Set your body type and age to see personalized nutrition and rest targets.</p>
       </header>
-
       <section class="profile-card">
         <div class="selectors">
           <div class="field">
@@ -95,29 +94,54 @@ const ageGroups = [
       </section>
     </main>
 
+    <div class="modal-overlay" id="sources-modal" hidden>
+      <div class="modal-box">
+        <button type="button" class="modal-close" id="modal-close" aria-label="Close">×</button>
+        <h3 id="modal-title"></h3>
+        <ul class="modal-source-list" id="modal-source-list"></ul>
+      </div>
+    </div>
+
     <script>
-      // --- types ---
-      interface Requirement {
-        resolved: number | null;
-        valueType?: string;
-        min?: number;
-        max?: number;
+      interface ResolvedRequirement {
+        valueType: "fixed" | "range" | "coefficient_per_kg" | "coefficient_per_cm";
+        min: number;
+        max: number | null;
         unit: string;
+        resolved: number | null;
       }
 
-      interface NutrientSource {
-        name: string;
-        description?: string;
+      interface FoodSource {
+        sourceType: "food";
+        food: { slug: string; name: string };
+        foodAmount: number;
+        foodUnit: string;
+        nutrientAmount: number;
+        nutrientUnit: string;
       }
+
+      interface ReferenceSource {
+        sourceType: "reference";
+        name: string;
+        description: string | null;
+        url: string | null;
+      }
+
+      type NutrientSource = FoodSource | ReferenceSource;
 
       interface Nutrient {
+        slug: string;
         name: string;
-        ready: boolean;
+        unit: string;
         importance: number;
-        dailyIntake: Requirement;
-        bodyStore?: Requirement | null;
+        requiresBodyMetrics: boolean;
+        usesWeight: boolean;
+        usesHeight: boolean;
+        ready: boolean;
         points: string[];
         sources: NutrientSource[];
+        dailyIntake: ResolvedRequirement | null;
+        bodyStore: ResolvedRequirement | null;
       }
 
       interface AppState {
@@ -228,19 +252,9 @@ const ageGroups = [
         }
       }
 
-      // Escape untrusted text before dropping it into innerHTML.
-      function escapeHtml(str: string): string {
-        return String(str)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-      }
-
-      function formatReq(req: Requirement | null | undefined): string {
-        if (!req) return "—";
-        if (req.valueType === "range" && req.max != null && req.min != null) {
+      function formatReq(req: ResolvedRequirement | null | undefined): string {
+        if (!req || req.resolved == null) return "—";
+        if (req.valueType === "range" && req.max != null) {
           const min = Number.isInteger(req.min) ? req.min : req.min.toFixed(1);
           const max = Number.isInteger(req.max) ? req.max : req.max.toFixed(1);
           return `${min}–${max} ${req.unit}`;
@@ -269,33 +283,23 @@ const ageGroups = [
           li.className = "nutrient-row";
           li.dataset.name = n.name.toLowerCase();
 
-          const bodyStoreValue = n.bodyStore ? formatReq(n.bodyStore) : null;
-          const bodyStoreLine =
-            bodyStoreValue && bodyStoreValue !== "—"
-              ? `<p class="n-bodystore"><strong>Body should contain:</strong> ${escapeHtml(bodyStoreValue)}</p>`
-              : "";
+          const bodyStoreLine = n.bodyStore
+            ? `<p class="n-bodystore"><strong>Body should contain:</strong> ${formatReq(n.bodyStore)}</p>`
+            : "";
 
-          const pointsHtml = n.points.map((p) => `<li>${escapeHtml(p)}</li>`).join("");
-          const sourcesHtml = n.sources
-            .map(
-              (s) =>
-                `<li><strong>${escapeHtml(s.name)}</strong>${
-                  s.description ? ` — ${escapeHtml(s.description)}` : ""
-                }</li>`
-            )
-            .join("");
+          const pointsHtml = n.points.map((p) => `<li>${p}</li>`).join("");
 
           li.innerHTML = `
             <button class="row-main" type="button" data-toggle>
-              <span class="n-name">${escapeHtml(n.name)}</span>
-              <span class="n-value">${escapeHtml(formatReq(n.dailyIntake))}</span>
+              <span class="n-name">${n.name}</span>
+              <span class="n-value">${formatReq(n.dailyIntake)}</span>
               <span class="n-stars"></span>
               <span class="n-arrow">›</span>
             </button>
             <div class="row-info" hidden>
               ${bodyStoreLine}
               <ul class="n-points">${pointsHtml}</ul>
-              ${sourcesHtml ? `<p class="n-sources-label">Sources:</p><ul class="n-sources">${sourcesHtml}</ul>` : ""}
+              ${n.sources.length ? `<button type="button" class="sources-btn">Sources</button>` : ""}
             </div>
           `;
 
@@ -315,9 +319,63 @@ const ageGroups = [
             });
           }
 
+          const sourcesBtn = li.querySelector<HTMLButtonElement>(".sources-btn");
+          sourcesBtn?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openSourcesModal(n);
+          });
+
           list.appendChild(li);
         });
       }
+
+      // --- sources modal ---
+      const sourcesModal = document.getElementById("sources-modal") as HTMLDivElement | null;
+      const modalTitle = document.getElementById("modal-title") as HTMLHeadingElement | null;
+      const modalList = document.getElementById("modal-source-list") as HTMLUListElement | null;
+      const modalCloseBtn = document.getElementById("modal-close") as HTMLButtonElement | null;
+
+      function openSourcesModal(nutrient: Nutrient): void {
+        if (!sourcesModal || !modalTitle || !modalList) return;
+
+        modalTitle.textContent = `${nutrient.name} Sources`;
+        modalList.innerHTML = nutrient.sources
+          .map((s) => {
+            if (s.sourceType === "food") {
+              return `
+                <li class="modal-source-row">
+                  <div class="modal-source-info">
+                    <strong>${s.food.name}</strong>
+                    <span class="modal-source-qty">${s.foodAmount}${s.foodUnit} → ${s.nutrientAmount}${s.nutrientUnit}</span>
+                  </div>
+                  <button type="button" class="recipes-btn" disabled title="Recipes page coming soon">Recipes</button>
+                </li>
+              `;
+            }
+            return `
+              <li class="modal-source-row">
+                <div class="modal-source-info">
+                  <strong>${s.name}</strong>
+                  ${s.description ? `<span class="modal-source-desc">${s.description}</span>` : ""}
+                </div>
+              </li>
+            `;
+          })
+          .join("");
+        sourcesModal.hidden = false;
+      }
+
+      function closeSourcesModal(): void {
+        if (sourcesModal) sourcesModal.hidden = true;
+      }
+
+      modalCloseBtn?.addEventListener("click", closeSourcesModal);
+      sourcesModal?.addEventListener("click", (e) => {
+        if (e.target === sourcesModal) closeSourcesModal();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && sourcesModal && !sourcesModal.hidden) closeSourcesModal();
+      });
 
       function applySearchFilter(): void {
         if (!list || !searchInput || !noResults) return;
@@ -334,7 +392,7 @@ const ageGroups = [
       searchInput?.addEventListener("input", applySearchFilter);
 
       fetchAndRender();
-    </script>
+        </script>
 
     <style>
       :global(body) {
@@ -650,10 +708,20 @@ const ageGroups = [
         margin-bottom: 0.25rem;
       }
 
-      .n-sources-label {
-        font-weight: 600;
-        color: #4a3f36;
-        margin-bottom: 0.3rem;
+      .sources-btn {
+        font-family: "Nunito", sans-serif;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #a17c3e;
+        background: #fff8ec;
+        border: 1.5px solid #d9c6a3;
+        border-radius: 999px;
+        padding: 0.35rem 0.9rem;
+        cursor: pointer;
+      }
+
+      .sources-btn:hover {
+        background: #f3e9d4;
       }
 
       .no-results {
@@ -661,6 +729,117 @@ const ageGroups = [
         color: #8a7c68;
         font-size: 0.9rem;
         margin: 1rem 0 0;
+      }
+
+      /* ---- Sources modal ---- */
+      .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 19, 16, 0.45);
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 100;
+}
+
+.modal-overlay[hidden] {
+  display: none;
+}
+
+.modal-overlay:not([hidden]) {
+  display: flex;
+}
+      .modal-box {
+        position: relative;
+        width: 100%;
+        max-width: 440px;
+        max-height: 80vh;
+        overflow-y: auto;
+        background: #fff8ec;
+        border: 2px solid #1a1310;
+        border-radius: 16px;
+        box-shadow: 4px 4px 0 #1a1310;
+        padding: 1.5rem;
+        font-family: "Nunito", sans-serif;
+      }
+
+      .modal-close {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.9rem;
+        border: none;
+        background: none;
+        font-size: 1.5rem;
+        line-height: 1;
+        color: #8a7c68;
+        cursor: pointer;
+      }
+
+      .modal-box h3 {
+        font-family: "Baloo 2", sans-serif;
+        font-weight: 700;
+        font-size: 1.15rem;
+        margin: 0 0 1rem;
+        padding-right: 1.5rem;
+      }
+
+      .modal-source-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+
+      .modal-source-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        border: 1.5px solid #e0c99a;
+        border-radius: 10px;
+        padding: 0.6rem 0.8rem;
+      }
+
+      .modal-source-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+
+      .modal-source-info strong {
+        font-family: "Baloo 2", sans-serif;
+        font-size: 0.95rem;
+      }
+
+      .modal-source-qty,
+      .modal-source-desc {
+        font-size: 0.82rem;
+        color: #6b5c4d;
+      }
+
+      .recipes-btn {
+        flex-shrink: 0;
+        font-family: "Nunito", sans-serif;
+        font-weight: 700;
+        font-size: 0.82rem;
+        color: #a17c3e;
+        background: #f3e9d4;
+        border: 1.5px solid #d9c6a3;
+        border-radius: 999px;
+        padding: 0.3rem 0.8rem;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
+      .recipes-btn:not(:disabled) {
+        cursor: pointer;
+        opacity: 1;
+      }
+
+      .recipes-btn:not(:disabled):hover {
+        background: #ede0c2;
       }
     </style>
   </body>

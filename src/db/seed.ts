@@ -5,6 +5,7 @@ import * as schema from "./schema";
 import {
   bodyTypes,
   ageBrackets,
+  foods,
   nutrients,
   nutrientPoints,
   nutrientSources,
@@ -34,6 +35,40 @@ const ageBracketSeed = [
   { slug: "elderly", label: "70+", minAge: 71, maxAge: 120, sortOrder: 4 },
 ] as const;
 
+// ---------- foods ----------
+// canonical ingredient list — nutrient sources AND (later) recipe ingredients
+// both point at these same rows, so a "Recipes" button on a nutrient source
+// can look up recipes by foodId reliably.
+
+const foodSeed = [
+  { slug: "chicken", name: "Chicken" },
+  { slug: "eggs", name: "Eggs" },
+  { slug: "lentils", name: "Lentils" },
+  { slug: "soya-chunks", name: "Soya Chunks" },
+  { slug: "beef", name: "Beef" },
+  { slug: "spinach", name: "Spinach" },
+  { slug: "milk", name: "Milk" },
+  { slug: "fortified-plant-milk", name: "Fortified Plant Milk" },
+  { slug: "salmon", name: "Salmon" },
+  { slug: "oats", name: "Oats" },
+] as const;
+
+// ---------- nutrient source definitions ----------
+// 'food' sources carry a quantity conversion (e.g. "1kg chicken → 200g protein")
+// and link to a foods row. 'reference' sources are non-food info (sunlight,
+// sleep hygiene, general guidance) and just have a name/description.
+
+type SourceSeed =
+  | {
+      type: "food";
+      foodSlug: string;
+      foodAmount: number;
+      foodUnit: string;
+      nutrientAmount: number;
+      nutrientUnit: string;
+    }
+  | { type: "reference"; name: string; description?: string; url?: string };
+
 // ---------- nutrient definitions ----------
 
 const nutrientSeed = [
@@ -50,9 +85,9 @@ const nutrientSeed = [
       "Chronic short sleep is linked to impaired glucose regulation and slower recovery.",
     ],
     sources: [
-      { name: "Consistent sleep schedule", description: "Same bed/wake time daily improves sleep quality more than total hours alone." },
-      { name: "National Sleep Foundation", description: "General sleep-duration guidelines by age." },
-    ],
+      { type: "reference", name: "Consistent sleep schedule", description: "Same bed/wake time daily improves sleep quality more than total hours alone." },
+      { type: "reference", name: "National Sleep Foundation", description: "General sleep-duration guidelines by age." },
+    ] satisfies SourceSeed[],
   },
   {
     slug: "protein",
@@ -67,10 +102,11 @@ const nutrientSeed = [
       "Needs increase with age to counter natural muscle loss (sarcopenia).",
     ],
     sources: [
-      { name: "Eggs", description: "Complete protein, ~6g per large egg." },
-      { name: "Chicken breast", description: "~31g protein per 100g cooked." },
-      { name: "Lentils", description: "~9g protein per 100g cooked, plant-based option." },
-    ],
+      { type: "food", foodSlug: "chicken", foodAmount: 1, foodUnit: "kg", nutrientAmount: 200, nutrientUnit: "g" },
+      { type: "food", foodSlug: "eggs", foodAmount: 1, foodUnit: "piece", nutrientAmount: 7, nutrientUnit: "g" },
+      { type: "food", foodSlug: "soya-chunks", foodAmount: 100, foodUnit: "g", nutrientAmount: 50, nutrientUnit: "g" },
+      { type: "food", foodSlug: "lentils", foodAmount: 100, foodUnit: "g", nutrientAmount: 9, nutrientUnit: "g" },
+    ] satisfies SourceSeed[],
   },
   {
     slug: "iron",
@@ -85,9 +121,9 @@ const nutrientSeed = [
       "Requirements are notably higher during menstruation and pregnancy.",
     ],
     sources: [
-      { name: "Red meat", description: "Heme iron, more readily absorbed than plant sources." },
-      { name: "Spinach", description: "Non-heme iron; pair with vitamin C for better absorption." },
-    ],
+      { type: "food", foodSlug: "beef", foodAmount: 100, foodUnit: "g", nutrientAmount: 2.6, nutrientUnit: "mg" },
+      { type: "food", foodSlug: "spinach", foodAmount: 100, foodUnit: "g", nutrientAmount: 2.7, nutrientUnit: "mg" },
+    ] satisfies SourceSeed[],
   },
   {
     slug: "calcium",
@@ -102,9 +138,9 @@ const nutrientSeed = [
       "Also involved in muscle contraction and nerve signaling.",
     ],
     sources: [
-      { name: "Dairy (milk, yogurt, cheese)", description: "Most bioavailable common source." },
-      { name: "Fortified plant milks", description: "Check label — fortification levels vary by brand." },
-    ],
+      { type: "food", foodSlug: "milk", foodAmount: 250, foodUnit: "ml", nutrientAmount: 300, nutrientUnit: "mg" },
+      { type: "food", foodSlug: "fortified-plant-milk", foodAmount: 250, foodUnit: "ml", nutrientAmount: 300, nutrientUnit: "mg" },
+    ] satisfies SourceSeed[],
   },
   {
     slug: "water",
@@ -119,9 +155,9 @@ const nutrientSeed = [
       "Needs rise significantly with heat, altitude, and physical activity.",
     ],
     sources: [
-      { name: "Plain water", description: "The default source; no calories, no additives." },
-      { name: "Water-rich foods", description: "Fruits and vegetables (cucumber, watermelon) contribute meaningfully." },
-    ],
+      { type: "reference", name: "Plain water", description: "The default source; no calories, no additives." },
+      { type: "reference", name: "Water-rich foods", description: "Fruits and vegetables (cucumber, watermelon) contribute meaningfully." },
+    ] satisfies SourceSeed[],
   },
   {
     slug: "vitaminD",
@@ -136,9 +172,9 @@ const nutrientSeed = [
       "Sunlight exposure lets the body synthesize its own supply.",
     ],
     sources: [
-      { name: "Sunlight", description: "10–30 minutes midday exposure, several times a week, for most people." },
-      { name: "Fatty fish", description: "Salmon, mackerel, sardines are naturally rich sources." },
-    ],
+      { type: "reference", name: "Sunlight", description: "10–30 minutes midday exposure, several times a week, for most people." },
+      { type: "food", foodSlug: "salmon", foodAmount: 100, foodUnit: "g", nutrientAmount: 10, nutrientUnit: "mcg" },
+    ] satisfies SourceSeed[],
   },
   {
     slug: "fiber",
@@ -153,9 +189,9 @@ const nutrientSeed = [
       "Feeds beneficial gut bacteria and supports satiety.",
     ],
     sources: [
-      { name: "Whole grains", description: "Oats, whole wheat, brown rice." },
-      { name: "Legumes", description: "Beans, lentils, chickpeas — also a protein source." },
-    ],
+      { type: "food", foodSlug: "oats", foodAmount: 100, foodUnit: "g", nutrientAmount: 10, nutrientUnit: "g" },
+      { type: "food", foodSlug: "lentils", foodAmount: 100, foodUnit: "g", nutrientAmount: 8, nutrientUnit: "g" },
+    ] satisfies SourceSeed[],
   },
   {
     slug: "calories",
@@ -171,8 +207,8 @@ const nutrientSeed = [
       "Placeholder coefficient below — swap for a real Mifflin-St Jeor / activity-adjusted formula before shipping.",
     ],
     sources: [
-      { name: "Whole-food, calorie-dense meals", description: "Combine with the protein/fiber targets above rather than tracking in isolation." },
-    ],
+      { type: "reference", name: "Whole-food, calorie-dense meals", description: "Combine with the protein/fiber targets above rather than tracking in isolation." },
+    ] satisfies SourceSeed[],
   },
 ] as const;
 
@@ -263,19 +299,24 @@ const allRequirementSeed = [...dailyIntakeSeed, ...bodyStoreSeed, ...caloriesSee
 async function main() {
   console.log("Clearing existing rows...");
   await db.delete(nutrientRequirements);
-  await db.delete(nutrientPoints);
   await db.delete(nutrientSources);
+  await db.delete(nutrientPoints);
   await db.delete(nutrients);
+  await db.delete(foods);
   await db.delete(ageBrackets);
   await db.delete(bodyTypes);
 
   console.log("Inserting body types...");
-const insertedBodyTypes = await db.insert(bodyTypes).values([...bodyTypeSeed]).returning();
+  const insertedBodyTypes = await db.insert(bodyTypes).values([...bodyTypeSeed]).returning();
   const bodyTypeIdBySlug = new Map(insertedBodyTypes.map((b) => [b.slug, b.id]));
 
   console.log("Inserting age brackets...");
   const insertedAgeBrackets = await db.insert(ageBrackets).values([...ageBracketSeed]).returning();
   const ageBracketIdBySlug = new Map(insertedAgeBrackets.map((a) => [a.slug, a.id]));
+
+  console.log("Inserting foods...");
+  const insertedFoods = await db.insert(foods).values([...foodSeed]).returning();
+  const foodIdBySlug = new Map(insertedFoods.map((f) => [f.slug, f.id]));
 
   console.log("Inserting nutrients...");
   const insertedNutrients = await db
@@ -296,6 +337,7 @@ const insertedBodyTypes = await db.insert(bodyTypes).values([...bodyTypeSeed]).r
   const nutrientIdBySlug = new Map(insertedNutrients.map((n) => [n.slug, n.id]));
 
   console.log("Inserting nutrient points and sources...");
+  const sourceMissing: string[] = [];
   for (const n of nutrientSeed) {
     const nutrientId = nutrientIdBySlug.get(n.slug)!;
 
@@ -306,15 +348,40 @@ const insertedBodyTypes = await db.insert(bodyTypes).values([...bodyTypeSeed]).r
     }
 
     if (n.sources.length) {
-      await db.insert(nutrientSources).values(
-        n.sources.map((s, i) => ({
-          nutrientId,
-          name: s.name,
-          description: s.description ?? null,
-          sortOrder: i,
-        }))
-      );
+      const sourceRows = n.sources
+        .map((s, i) => {
+          if (s.type === "food") {
+            const foodId = foodIdBySlug.get(s.foodSlug);
+            if (!foodId) {
+              sourceMissing.push(`${n.slug}/${s.foodSlug}`);
+              return null;
+            }
+            return {
+              nutrientId,
+              sourceType: "food" as const,
+              foodId,
+              foodAmount: String(s.foodAmount),
+              foodUnit: s.foodUnit,
+              nutrientAmount: String(s.nutrientAmount),
+              nutrientUnit: s.nutrientUnit,
+              sortOrder: i,
+            };
+          }
+          return {
+            nutrientId,
+            sourceType: "reference" as const,
+            name: s.name,
+            description: s.description ?? null,
+            sortOrder: i,
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null);
+
+      await db.insert(nutrientSources).values(sourceRows);
     }
+  }
+  if (sourceMissing.length) {
+    console.warn("Skipped sources with unresolved food slugs:", sourceMissing);
   }
 
   console.log("Inserting nutrient requirements...");
@@ -348,7 +415,7 @@ const insertedBodyTypes = await db.insert(bodyTypes).values([...bodyTypeSeed]).r
   await db.insert(nutrientRequirements).values(requirementRows);
 
   console.log(
-    `Done. ${insertedBodyTypes.length} body types, ${insertedAgeBrackets.length} age brackets, ${insertedNutrients.length} nutrients, ${requirementRows.length} requirement rows.`
+    `Done. ${insertedBodyTypes.length} body types, ${insertedAgeBrackets.length} age brackets, ${insertedFoods.length} foods, ${insertedNutrients.length} nutrients, ${requirementRows.length} requirement rows.`
   );
 }
 

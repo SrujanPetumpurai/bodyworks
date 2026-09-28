@@ -1,3 +1,4 @@
+// src/db/nutrient-profile.ts
 import { eq } from "drizzle-orm";
 import { db } from "./index";
 import { bodyTypes, ageBrackets } from "./schema";
@@ -12,6 +13,22 @@ export type ResolvedRequirement = {
   resolved: number | null;
 };
 
+export type NutrientSource =
+  | {
+      sourceType: "food";
+      food: { slug: string; name: string };
+      foodAmount: number;
+      foodUnit: string;
+      nutrientAmount: number;
+      nutrientUnit: string;
+    }
+  | {
+      sourceType: "reference";
+      name: string;
+      description: string | null;
+      url: string | null;
+    };
+
 export type NutrientProfile = {
   slug: string;
   name: string;
@@ -25,7 +42,7 @@ export type NutrientProfile = {
   // weight/height-gated ones flip to ready once those are entered)
   ready: boolean;
   points: string[];
-  sources: { name: string; description: string | null; url: string | null }[];
+  sources: NutrientSource[];
   dailyIntake: ResolvedRequirement | null;
   bodyStore: ResolvedRequirement | null;
 };
@@ -75,7 +92,10 @@ export async function getNutrientProfiles({
     orderBy: (n, { asc }) => asc(n.sortOrder),
     with: {
       points: { orderBy: (p, { asc }) => asc(p.sortOrder) },
-      sources: { orderBy: (s, { asc }) => asc(s.sortOrder) },
+      sources: {
+        orderBy: (s, { asc }) => asc(s.sortOrder),
+        with: { food: true },
+      },
       requirements: {
         where: (req, { and, eq }) =>
           and(eq(req.bodyTypeId, bodyType.id), eq(req.ageBracketId, ageBracket.id)),
@@ -105,6 +125,25 @@ export async function getNutrientProfiles({
     const dailyIntake = toResolved(dailyReq);
     const bodyStore = toResolved(storeReq);
 
+    const sources: NutrientSource[] = n.sources.map((s) => {
+      if (s.sourceType === "food" && s.food) {
+        return {
+          sourceType: "food",
+          food: { slug: s.food.slug, name: s.food.name },
+          foodAmount: Number(s.foodAmount),
+          foodUnit: s.foodUnit!,
+          nutrientAmount: Number(s.nutrientAmount),
+          nutrientUnit: s.nutrientUnit!,
+        };
+      }
+      return {
+        sourceType: "reference",
+        name: s.name!,
+        description: s.description,
+        url: s.url,
+      };
+    });
+
     const missingWeight = n.usesWeight && weightKg == null;
     const missingHeight = n.usesHeight && heightCm == null;
     const ready = !n.requiresBodyMetrics || (!missingWeight && !missingHeight);
@@ -119,7 +158,7 @@ export async function getNutrientProfiles({
       usesHeight: n.usesHeight,
       ready,
       points: n.points.map((p) => p.point),
-      sources: n.sources.map((s) => ({ name: s.name, description: s.description, url: s.url })),
+      sources,
       dailyIntake,
       bodyStore,
     };
