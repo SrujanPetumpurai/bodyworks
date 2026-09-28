@@ -336,6 +336,7 @@ type RecipeSeed = {
   description: string;
   prepTimeMinutes: number;
   difficulty: "easy" | "medium" | "hard";
+  cuisine: string | null;
   servings: number;
   ingredients: { foodSlug: string; amount: number; unit: string }[];
   steps: string[];
@@ -348,6 +349,7 @@ const recipeSeed: RecipeSeed[] = [
     description: "A fast, high-protein breakfast: fluffy eggs with wilted spinach and melted cheddar.",
     prepTimeMinutes: 10,
     difficulty: "easy",
+    cuisine: "American",
     servings: 1,
     ingredients: [
       { foodSlug: "egg", amount: 3, unit: "piece" },
@@ -368,6 +370,7 @@ const recipeSeed: RecipeSeed[] = [
     description: "No-cook oats soaked in milk and yogurt overnight, topped with banana. Grab and go.",
     prepTimeMinutes: 5,
     difficulty: "easy",
+    cuisine: null,
     servings: 1,
     ingredients: [
       { foodSlug: "oats", amount: 50, unit: "g" },
@@ -387,6 +390,7 @@ const recipeSeed: RecipeSeed[] = [
     description: "Seared garlic chicken breast over rice with wilted spinach. A solid post-workout dinner.",
     prepTimeMinutes: 25,
     difficulty: "easy",
+    cuisine: "Asian",
     servings: 2,
     ingredients: [
       { foodSlug: "chicken-breast", amount: 300, unit: "g" },
@@ -408,6 +412,7 @@ const recipeSeed: RecipeSeed[] = [
     description: "Oven-baked salmon fillets with olive oil and tomato, served over rice.",
     prepTimeMinutes: 25,
     difficulty: "medium",
+    cuisine: "Mediterranean",
     servings: 2,
     ingredients: [
       { foodSlug: "salmon", amount: 300, unit: "g" },
@@ -429,6 +434,7 @@ const recipeSeed: RecipeSeed[] = [
     description: "A hearty plant-based stew, high in fiber and protein, that reheats well for meal prep.",
     prepTimeMinutes: 35,
     difficulty: "medium",
+    cuisine: "Indian",
     servings: 4,
     ingredients: [
       { foodSlug: "chickpeas", amount: 400, unit: "g" },
@@ -453,6 +459,7 @@ const recipeSeed: RecipeSeed[] = [
     description: "Quick, iron-rich stir-fry with beef strips, onion and spinach over rice.",
     prepTimeMinutes: 20,
     difficulty: "medium",
+    cuisine: "Asian",
     servings: 2,
     ingredients: [
       { foodSlug: "beef", amount: 250, unit: "g" },
@@ -628,6 +635,7 @@ async function main() {
         description: r.description,
         prepTimeMinutes: r.prepTimeMinutes,
         difficulty: r.difficulty,
+        cuisine: r.cuisine,
         servings: r.servings,
       }))
     )
@@ -638,6 +646,7 @@ async function main() {
         description: sql`excluded.description`,
         prepTimeMinutes: sql`excluded.prep_time_minutes`,
         difficulty: sql`excluded.difficulty`,
+        cuisine: sql`excluded.cuisine`,
         servings: sql`excluded.servings`,
         updatedAt: sql`now()`,
       },

@@ -9,7 +9,9 @@ type RecipeSummary = {
   name: string;
   description: string;
   imageUrl: string | null;
+  cuisine: string | null;
   authorName: string | null;
+  authorImage: string | null;
   avgRating: number;
   ratingCount: number;
   ingredientNames: string[];
@@ -69,7 +71,7 @@ export default function RecipesBrowser({ foods, recipes: initialRecipes }: Props
 
       {loading && <p className="recipes-loading">Loading recipes…</p>}
       {!loading && recipes.length === 0 && (
-        <p className="recipes-empty">No recipes match those ingredients.</p>
+        <p className="recipes-empty">No recipes match those ingredients. Try removing one.</p>
       )}
 
       <div className="recipes-list">
@@ -79,7 +81,9 @@ export default function RecipesBrowser({ foods, recipes: initialRecipes }: Props
             name={r.name}
             description={r.description}
             imageUrl={r.imageUrl}
+            cuisine={r.cuisine}
             authorName={r.authorName}
+            authorImage={r.authorImage}
             avgRating={r.avgRating}
             ratingCount={r.ratingCount}
             ingredientNames={r.ingredientNames}

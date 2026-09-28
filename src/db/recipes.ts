@@ -7,7 +7,9 @@ export type RecipeSummary = {
   name: string;
   description: string;
   imageUrl: string | null;
+  cuisine: string | null;
   authorName: string | null;
+  authorImage: string | null;
   avgRating: number;
   ratingCount: number;
   ingredientNames: string[];
@@ -41,7 +43,9 @@ export async function listRecipes(ingredientSlugs?: string[]): Promise<RecipeSum
     name: r.name,
     description: r.description,
     imageUrl: r.imageUrl,
+    cuisine: r.cuisine,
     authorName: r.author?.name ?? null,
+    authorImage: r.author?.image ?? null,
     avgRating: Number(r.avgRating),
     ratingCount: r.ratingCount,
     ingredientNames: r.ingredients.slice(0, 4).map((ri) => ri.food.name),

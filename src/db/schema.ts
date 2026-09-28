@@ -248,6 +248,7 @@ export const recipes = pgTable("recipes", {
   externalUrl: text("external_url"), // e.g. original source link
   prepTimeMinutes: integer("prep_time_minutes"),
   difficulty: recipeDifficultyEnum("difficulty"),
+  cuisine: text("cuisine"),
   servings: integer("servings"),
   // denormalized so sorting/displaying rating doesn't need a join+aggregate
   // on every list request — recomputed in db/recipes.ts whenever a rating changes
