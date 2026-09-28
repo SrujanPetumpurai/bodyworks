@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "./index";
-import { recipes, recipeRatings, foods } from "./schema";
+import { recipes, recipeRatings } from "./schema";
 
 export type RecipeSummary = {
   slug: string;

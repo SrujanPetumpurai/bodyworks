@@ -1,4 +1,3 @@
-// src/db/nutrient-profile.ts
 import { eq } from "drizzle-orm";
 import { db } from "./index";
 import { bodyTypes, ageBrackets } from "./schema";
@@ -13,21 +12,24 @@ export type ResolvedRequirement = {
   resolved: number | null;
 };
 
-export type NutrientSource =
-  | {
-      sourceType: "food";
-      food: { slug: string; name: string };
-      foodAmount: number;
-      foodUnit: string;
-      nutrientAmount: number;
-      nutrientUnit: string;
-    }
-  | {
-      sourceType: "reference";
-      name: string;
-      description: string | null;
-      url: string | null;
-    };
+export type NutrientSourceView = {
+  type: "food" | "reference";
+  // always display-ready: for food sources this is the food's name
+  name: string;
+  // always display-ready: for food sources this is auto-built,
+  // e.g. "100 g → 31 g protein" (unless an explicit description exists)
+  description: string | null;
+  url: string | null;
+  // structured data, only present for food sources
+  food: {
+    slug: string;
+    name: string;
+    amount: number;
+    unit: string;
+    nutrientAmount: number;
+    nutrientUnit: string;
+  } | null;
+};
 
 export type NutrientProfile = {
   slug: string;
@@ -42,7 +44,7 @@ export type NutrientProfile = {
   // weight/height-gated ones flip to ready once those are entered)
   ready: boolean;
   points: string[];
-  sources: NutrientSource[];
+  sources: NutrientSourceView[];
   dailyIntake: ResolvedRequirement | null;
   bodyStore: ResolvedRequirement | null;
 };
@@ -69,6 +71,12 @@ function resolveValue(
     case "coefficient_per_cm":
       return heightCm != null ? min * heightCm : null;
   }
+}
+
+// numeric columns come back from Postgres as strings ("100.000") — turn them
+// into clean display text ("100")
+function num(value: string | number): string {
+  return String(Number(value));
 }
 
 export async function getNutrientProfiles({
@@ -125,28 +133,45 @@ export async function getNutrientProfiles({
     const dailyIntake = toResolved(dailyReq);
     const bodyStore = toResolved(storeReq);
 
-    const sources: NutrientSource[] = n.sources.map((s) => {
-      if (s.sourceType === "food" && s.food) {
-        return {
-          sourceType: "food",
-          food: { slug: s.food.slug, name: s.food.name },
-          foodAmount: Number(s.foodAmount),
-          foodUnit: s.foodUnit!,
-          nutrientAmount: Number(s.nutrientAmount),
-          nutrientUnit: s.nutrientUnit!,
-        };
-      }
-      return {
-        sourceType: "reference",
-        name: s.name!,
-        description: s.description,
-        url: s.url,
-      };
-    });
-
     const missingWeight = n.usesWeight && weightKg == null;
     const missingHeight = n.usesHeight && heightCm == null;
     const ready = !n.requiresBodyMetrics || (!missingWeight && !missingHeight);
+
+    const sources: NutrientSourceView[] = n.sources.map((s) => {
+      if (
+        s.sourceType === "food" &&
+        s.food &&
+        s.foodAmount != null &&
+        s.foodUnit != null &&
+        s.nutrientAmount != null &&
+        s.nutrientUnit != null
+      ) {
+        return {
+          type: "food",
+          name: s.food.name,
+          description:
+            s.description ??
+            `${num(s.foodAmount)} ${s.foodUnit} → ${num(s.nutrientAmount)} ${s.nutrientUnit} ${n.name.toLowerCase()}`,
+          url: s.url,
+          food: {
+            slug: s.food.slug,
+            name: s.food.name,
+            amount: Number(s.foodAmount),
+            unit: s.foodUnit,
+            nutrientAmount: Number(s.nutrientAmount),
+            nutrientUnit: s.nutrientUnit,
+          },
+        };
+      }
+
+      return {
+        type: "reference",
+        name: s.name ?? "Source",
+        description: s.description,
+        url: s.url,
+        food: null,
+      };
+    });
 
     return {
       slug: n.slug,

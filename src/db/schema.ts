@@ -1,19 +1,74 @@
 import { relations, sql } from "drizzle-orm";
-
 import {
+  pgTable,
   serial,
+  text,
   integer,
   numeric,
+  boolean,
+  timestamp,
   pgEnum,
   uniqueIndex,
   check,
-  pgTable,
-  text,
-  boolean,
-  timestamp,
 } from "drizzle-orm/pg-core";
 
-// ---------- lookups ----------
+// =====================================================================
+// AUTH (user / session / account / verification)
+// =====================================================================
+
+export const user = pgTable("user", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").notNull().default(false),
+  image: text("image"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const session = pgTable("session", {
+  id: text("id").primaryKey(),
+  expiresAt: timestamp("expires_at").notNull(),
+  token: text("token").notNull().unique(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+});
+
+export const account = pgTable("account", {
+  id: text("id").primaryKey(),
+  accountId: text("account_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  idToken: text("id_token"),
+  accessTokenExpiresAt: timestamp("access_token_expires_at"),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+  scope: text("scope"),
+  password: text("password"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const verification = pgTable("verification", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// =====================================================================
+// DAILY REQUIREMENTS — lookups
+// =====================================================================
 
 export const bodyTypes = pgTable("body_types", {
   id: serial("id").primaryKey(),
@@ -47,7 +102,25 @@ export const nutrientMetricTypeEnum = pgEnum("nutrient_metric_type", [
   "body_store",
 ]);
 
-// ---------- nutrients ----------
+// =====================================================================
+// FOODS — shared by nutrient sources AND recipe ingredients
+// =====================================================================
+
+export const foods = pgTable("foods", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(), // 'chicken-breast', 'eggs', 'soya-chunks'
+  name: text("name").notNull(), // "Chicken Breast", "Eggs", "Soya Chunks"
+  // macros are nullable so existing foods (seeded for nutrient sources) stay valid
+  caloriesPer100g: numeric("calories_per_100g", { precision: 8, scale: 2 }),
+  proteinPer100g: numeric("protein_per_100g", { precision: 8, scale: 2 }),
+  carbsPer100g: numeric("carbs_per_100g", { precision: 8, scale: 2 }),
+  fatPer100g: numeric("fat_per_100g", { precision: 8, scale: 2 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// =====================================================================
+// DAILY REQUIREMENTS — nutrients
+// =====================================================================
 
 export const nutrients = pgTable(
   "nutrients",
@@ -77,20 +150,6 @@ export const nutrientPoints = pgTable("nutrient_points", {
     .references(() => nutrients.id, { onDelete: "cascade" }),
   point: text("point").notNull(),
   sortOrder: integer("sort_order").notNull().default(0),
-});
-
-// ---------- foods ----------
-// Shared food catalog: used both for nutrient sources ("Chicken, 1kg -> 200g protein")
-// and as the structured ingredient list for recipes (macros + recipe_ingredients).
-export const foods = pgTable("foods", {
-  id: serial("id").primaryKey(),
-  slug: text("slug").notNull().unique(), // 'chicken-breast', 'rice', 'eggs', ...
-  name: text("name").notNull(), // "Chicken Breast", "Rice", "Eggs"
-  caloriesPer100g: numeric("calories_per_100g", { precision: 8, scale: 2 }),
-  proteinPer100g: numeric("protein_per_100g", { precision: 8, scale: 2 }),
-  carbsPer100g: numeric("carbs_per_100g", { precision: 8, scale: 2 }),
-  fatPer100g: numeric("fat_per_100g", { precision: 8, scale: 2 }),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const nutrientSourceTypeEnum = pgEnum("nutrient_source_type", ["food", "reference"]);
@@ -172,7 +231,9 @@ export const nutrientRequirements = pgTable(
   ]
 );
 
-// ---------- recipes ----------
+// =====================================================================
+// RECIPES
+// =====================================================================
 
 export const recipeDifficultyEnum = pgEnum("recipe_difficulty", ["easy", "medium", "hard"]);
 
@@ -238,59 +299,11 @@ export const recipeRatings = pgTable(
   ]
 );
 
-// ---------- auth ----------
+// =====================================================================
+// RELATIONS
+// =====================================================================
 
-export const user = pgTable("user", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").notNull().default(false),
-  image: text("image"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-export const session = pgTable("session", {
-  id: text("id").primaryKey(),
-  expiresAt: timestamp("expires_at").notNull(),
-  token: text("token").notNull().unique(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-});
-
-export const account = pgTable("account", {
-  id: text("id").primaryKey(),
-  accountId: text("account_id").notNull(),
-  providerId: text("provider_id").notNull(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  accessToken: text("access_token"),
-  refreshToken: text("refresh_token"),
-  idToken: text("id_token"),
-  accessTokenExpiresAt: timestamp("access_token_expires_at"),
-  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
-  scope: text("scope"),
-  password: text("password"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-export const verification = pgTable("verification", {
-  id: text("id").primaryKey(),
-  identifier: text("identifier").notNull(),
-  value: text("value").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// ---------- relations ----------
+// ---------- daily requirements ----------
 
 export const bodyTypesRelations = relations(bodyTypes, ({ many }) => ({
   requirements: many(nutrientRequirements),
@@ -339,10 +352,14 @@ export const nutrientSourcesRelations = relations(nutrientSources, ({ one }) => 
   }),
 }));
 
+// ---------- foods (used by both features) ----------
+
 export const foodsRelations = relations(foods, ({ many }) => ({
   nutrientSources: many(nutrientSources),
   recipeIngredients: many(recipeIngredients),
 }));
+
+// ---------- recipes ----------
 
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
   author: one(user, { fields: [recipes.authorId], references: [user.id] }),

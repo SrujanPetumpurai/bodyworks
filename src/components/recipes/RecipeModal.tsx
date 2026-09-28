@@ -1,71 +1,173 @@
 import { useEffect, useState } from "react";
-import IngredientFilter from "./IngredientFilter";
-import RecipeCard from "./RecipeCard";
-import RecipeModal from "./RecipeModal";
+import StarRating from "./StarRating";
+import { useSession } from "../../lib/auth-client";
 
-type Food = { slug: string; name: string };
-type RecipeSummary = {
+type Props = {
+  slug: string;
+  onClose: () => void;
+};
+
+type RecipeDetail = {
   slug: string;
   name: string;
   description: string;
   imageUrl: string | null;
-  authorName: string | null;
-  avgRating: number;
+  videoUrl: string | null;
+  externalUrl: string | null;
+  prepTimeMinutes: number | null;
+  difficulty: "easy" | "medium" | "hard" | null;
+  servings: number | null;
+  avgRating: string | number;
   ratingCount: number;
-  ingredientNames: string[];
+  author: { name: string } | null;
+  ingredients: { id: number; amount: string; unit: string; food: { name: string } }[];
+  steps: { id: number; stepNumber: number; instruction: string }[];
 };
 
-type Props = {
-  foods: Food[];
-};
-
-export default function RecipesBrowser({ foods }: Props) {
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
-  const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
+export default function RecipeModal({ slug, onClose }: Props) {
+  const { data: session } = useSession();
+  const [recipe, setRecipe] = useState<RecipeDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [avgRating, setAvgRating] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
+  const [rateMessage, setRateMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
-    const params = selectedIngredients.length
-      ? `?ingredients=${selectedIngredients.join(",")}`
-      : "";
-    fetch(`/api/recipes${params}`)
-      .then((res) => res.json())
-      .then(setRecipes)
-      .finally(() => setLoading(false));
-  }, [selectedIngredients]);
+    setError(null);
+
+    fetch(`/api/recipes/${slug}`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Couldn't load this recipe.");
+        return res.json();
+      })
+      .then((data: RecipeDetail) => {
+        if (cancelled) return;
+        setRecipe(data);
+        setAvgRating(Number(data.avgRating));
+        setRatingCount(data.ratingCount);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Something went wrong.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  // close on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  async function handleRate(stars: number) {
+    if (!session) {
+      setRateMessage("Sign in to rate recipes.");
+      return;
+    }
+    setRateMessage(null);
+    try {
+      const res = await fetch(`/api/recipes/${slug}/rate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stars }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setRateMessage(body?.error ?? "Couldn't save your rating.");
+        return;
+      }
+      const result: { avgRating: number; ratingCount: number } = await res.json();
+      setAvgRating(result.avgRating);
+      setRatingCount(result.ratingCount);
+      setRateMessage("Thanks for rating!");
+    } catch {
+      setRateMessage("Couldn't save your rating.");
+    }
+  }
 
   return (
-    <div className="recipes-browser">
-      <IngredientFilter
-        foods={foods}
-        selected={selectedIngredients}
-        onChange={setSelectedIngredients}
-      />
+    <div
+      className="recipe-modal-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="recipe-modal-box" role="dialog" aria-modal="true">
+        <button type="button" className="recipe-modal-close" onClick={onClose} aria-label="Close">
+          ×
+        </button>
 
-      {loading && <p className="recipes-loading">Loading recipes…</p>}
-      {!loading && recipes.length === 0 && (
-        <p className="recipes-empty">No recipes match those ingredients.</p>
-      )}
+        {loading && <p>Loading…</p>}
+        {error && <p>{error}</p>}
 
-      <div className="recipes-list">
-        {recipes.map((r) => (
-          <RecipeCard
-            key={r.slug}
-            name={r.name}
-            description={r.description}
-            imageUrl={r.imageUrl}
-            authorName={r.authorName}
-            avgRating={r.avgRating}
-            ratingCount={r.ratingCount}
-            ingredientNames={r.ingredientNames}
-            onClick={() => setActiveSlug(r.slug)}
-          />
-        ))}
+        {recipe && (
+          <>
+            {recipe.imageUrl && (
+              <img className="recipe-modal-image" src={recipe.imageUrl} alt={recipe.name} />
+            )}
+
+            <h2>{recipe.name}</h2>
+            <p className="recipe-modal-desc">{recipe.description}</p>
+
+            <div className="recipe-modal-meta">
+              {recipe.prepTimeMinutes != null && <span>{recipe.prepTimeMinutes} min</span>}
+              {recipe.difficulty && <span>{recipe.difficulty}</span>}
+              {recipe.servings != null && <span>Serves {recipe.servings}</span>}
+              {recipe.author && <span>by {recipe.author.name}</span>}
+            </div>
+
+            <div className="recipe-modal-rating">
+              <StarRating value={Math.round(avgRating)} onRate={handleRate} />
+              <span>
+                {avgRating.toFixed(1)} ({ratingCount})
+              </span>
+              {rateMessage && <span className="recipe-modal-rate-msg">{rateMessage}</span>}
+            </div>
+
+            <h3>Ingredients</h3>
+            <ul className="recipe-modal-ingredients">
+              {recipe.ingredients.map((ri) => (
+                <li key={ri.id}>
+                  {Number(ri.amount)} {ri.unit} {ri.food.name}
+                </li>
+              ))}
+            </ul>
+
+            <h3>Steps</h3>
+            <ol className="recipe-modal-steps">
+              {recipe.steps.map((s) => (
+                <li key={s.id}>{s.instruction}</li>
+              ))}
+            </ol>
+
+            {(recipe.videoUrl || recipe.externalUrl) && (
+              <p className="recipe-modal-links">
+                {recipe.videoUrl && (
+                  <a href={recipe.videoUrl} target="_blank" rel="noreferrer">
+                    Watch video
+                  </a>
+                )}
+                {recipe.externalUrl && (
+                  <a href={recipe.externalUrl} target="_blank" rel="noreferrer">
+                    Original source
+                  </a>
+                )}
+              </p>
+            )}
+          </>
+        )}
       </div>
-
-      {activeSlug && <RecipeModal slug={activeSlug} onClose={() => setActiveSlug(null)} />}
     </div>
   );
 }

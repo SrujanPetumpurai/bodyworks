@@ -1,9 +1,9 @@
 ---
 export const prerender = false;
 import RecipesBrowser from "../components/recipes/RecipesBrowser";
-import { listFoods, listRecipesWithIngredients } from "../db/recipes";
+import { listFoods, listRecipes } from "../db/recipes";
 
-const [foods, recipes] = await Promise.all([listFoods(), listRecipesWithIngredients()]);
+const [foods, recipes] = await Promise.all([listFoods(), listRecipes()]);
 ---
 
 <html lang="en">

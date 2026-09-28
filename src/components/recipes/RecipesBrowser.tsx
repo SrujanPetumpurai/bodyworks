@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import IngredientFilter from "./IngredientFilter";
 import RecipeCard from "./RecipeCard";
 import RecipeModal from "./RecipeModal";
@@ -17,23 +17,46 @@ type RecipeSummary = {
 
 type Props = {
   foods: Food[];
+  recipes: RecipeSummary[]; // initial list, loaded by recipes.astro
 };
 
-export default function RecipesBrowser({ foods }: Props) {
+export default function RecipesBrowser({ foods, recipes: initialRecipes }: Props) {
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
-  const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [recipes, setRecipes] = useState<RecipeSummary[]>(initialRecipes);
+  const [loading, setLoading] = useState(false);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const isFirstRun = useRef(true);
 
   useEffect(() => {
+    // First run: recipes.astro already gave us the full list, don't fetch again.
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+
+    let cancelled = false;
     setLoading(true);
+
     const params = selectedIngredients.length
-      ? `?ingredients=${selectedIngredients.join(",")}`
+      ? `?ingredients=${encodeURIComponent(selectedIngredients.join(","))}`
       : "";
+
     fetch(`/api/recipes${params}`)
       .then((res) => res.json())
-      .then(setRecipes)
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (!cancelled) setRecipes(data);
+      })
+      .catch(() => {
+        if (!cancelled) setRecipes([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    // ignore out-of-date responses if the user clicks chips quickly
+    return () => {
+      cancelled = true;
+    };
   }, [selectedIngredients]);
 
   return (
