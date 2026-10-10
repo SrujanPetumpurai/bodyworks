@@ -9,7 +9,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
     "@astrojs/react": "^7.0.0",

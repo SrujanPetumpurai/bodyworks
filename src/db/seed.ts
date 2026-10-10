@@ -1,9 +1,12 @@
 import "dotenv/config";
+import fs from "node:fs";
+import path from "node:path";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import * as schema from "./schema";
 import {
+  user,
   bodyTypes,
   ageBrackets,
   foods,
@@ -14,6 +17,7 @@ import {
   recipes,
   recipeIngredients,
   recipeSteps,
+  recipeRatings,
 } from "./schema";
 
 if (!process.env.DATABASE_URL) {
@@ -477,6 +481,35 @@ const recipeSeed: RecipeSeed[] = [
     ],
   },
 ];
+// ---------- demo users, authors, ratings ----------
+// Demo users have no login (no account row) — they exist so recipes have
+// posters and the Profile filter has people in it. No avatar image, so the UI
+// shows colored initials.
+
+const demoUsers = [
+  { id: "seed-aarav", name: "Aarav Kumar", email: "aarav@bodyworks.demo" },
+  { id: "seed-priya", name: "Priya Sharma", email: "priya@bodyworks.demo" },
+  { id: "seed-rohan", name: "Rohan Mehta", email: "rohan@bodyworks.demo" },
+];
+
+const recipeExtras: Record<string, { authorId: string; ratings: Record<string, number> }> = {
+  "spinach-cheese-scramble": { authorId: "seed-aarav", ratings: { "seed-priya": 5, "seed-rohan": 4 } },
+  "creamy-overnight-oats": { authorId: "seed-priya", ratings: { "seed-aarav": 5, "seed-rohan": 5 } },
+  "garlic-chicken-rice-bowl": { authorId: "seed-aarav", ratings: { "seed-priya": 4, "seed-rohan": 4 } },
+  "baked-salmon-and-rice": { authorId: "seed-priya", ratings: { "seed-aarav": 3, "seed-rohan": 4 } },
+  "chickpea-lentil-stew": { authorId: "seed-rohan", ratings: { "seed-aarav": 4, "seed-priya": 5 } },
+  "beef-and-spinach-stir-fry": { authorId: "seed-rohan", ratings: { "seed-aarav": 4 } },
+};
+
+// Looks for public/recipes/<slug>.(jpg|jpeg|png|webp). Run from the project root.
+function findImage(slug: string): string | null {
+  for (const ext of ["jpg", "jpeg", "png", "webp"]) {
+    if (fs.existsSync(path.join(process.cwd(), "public", "recipes", `${slug}.${ext}`))) {
+      return `/recipes/${slug}.${ext}`;
+    }
+  }
+  return null;
+}
 
 // ---------- run ----------
 
@@ -624,11 +657,17 @@ async function main() {
   await db.insert(nutrientRequirements).values(requirementRows);
 
   // ---------- recipes ----------
-
+  console.log("Upserting demo users...");
+  await db
+    .insert(user)
+    .values(
+      demoUsers.map((u) => ({ id: u.id, name: u.name, email: u.email, emailVerified: true, image: null }))
+    )
+    .onConflictDoUpdate({ target: user.id, set: { name: sql`excluded.name` } });
   console.log("Upserting recipes...");
   const upsertedRecipes = await db
     .insert(recipes)
-    .values(
+        .values(
       recipeSeed.map((r) => ({
         slug: r.slug,
         name: r.name,
@@ -637,6 +676,8 @@ async function main() {
         difficulty: r.difficulty,
         cuisine: r.cuisine,
         servings: r.servings,
+        authorId: recipeExtras[r.slug]?.authorId ?? null,
+        imageUrl: findImage(r.slug),
       }))
     )
     .onConflictDoUpdate({
@@ -648,6 +689,8 @@ async function main() {
         difficulty: sql`excluded.difficulty`,
         cuisine: sql`excluded.cuisine`,
         servings: sql`excluded.servings`,
+        authorId: sql`excluded.author_id`,
+        imageUrl: sql`excluded.image_url`,
         updatedAt: sql`now()`,
       },
     })
@@ -690,7 +733,39 @@ async function main() {
 
   console.log(
     `Done. ${insertedBodyTypes.length} body types, ${insertedAgeBrackets.length} age brackets, ${upsertedFoods.length} foods, ${insertedNutrients.length} nutrients, ${requirementRows.length} requirement rows, ${upsertedRecipes.length} recipes (${ingredientRows.length} ingredient rows, ${stepRows.length} steps).`
+  );  console.log("Seeding demo ratings...");
+  const ratingRows = recipeSeed.flatMap((r) =>
+    Object.entries(recipeExtras[r.slug]?.ratings ?? {}).map(([userId, stars]) => ({
+      recipeId: recipeIdBySlug.get(r.slug)!,
+      userId,
+      stars,
+    }))
   );
+  await db
+    .insert(recipeRatings)
+    .values(ratingRows)
+    .onConflictDoUpdate({
+      target: [recipeRatings.recipeId, recipeRatings.userId],
+      set: { stars: sql`excluded.stars` },
+    });
+
+  // recompute avg + count from ALL ratings (so real user ratings are included)
+  const aggs = await db
+    .select({
+      recipeId: recipeRatings.recipeId,
+      avg: sql<number>`avg(${recipeRatings.stars})`,
+      count: sql<number>`count(*)`,
+    })
+    .from(recipeRatings)
+    .where(inArray(recipeRatings.recipeId, recipeIds))
+    .groupBy(recipeRatings.recipeId);
+
+  for (const a of aggs) {
+    await db
+      .update(recipes)
+      .set({ avgRating: Number(a.avg).toFixed(2), ratingCount: Number(a.count) })
+      .where(eq(recipes.id, a.recipeId));
+  }
 }
 
 main()

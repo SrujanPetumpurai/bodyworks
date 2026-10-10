@@ -11,8 +11,10 @@ export type RecipeSummary = {
   authorName: string | null;
   authorImage: string | null;
   avgRating: number;
+  authorId: string | null;
   ratingCount: number;
   ingredientNames: string[];
+  ingredientSlugs: string[];
 };
 
 // Recipes must contain EVERY selected ingredient (the "what can I make
@@ -48,7 +50,9 @@ export async function listRecipes(ingredientSlugs?: string[]): Promise<RecipeSum
     authorImage: r.author?.image ?? null,
     avgRating: Number(r.avgRating),
     ratingCount: r.ratingCount,
+    authorId: r.author?.id ?? null,
     ingredientNames: r.ingredients.slice(0, 4).map((ri) => ri.food.name),
+    ingredientSlugs: r.ingredients.map((ri) => ri.food.slug),
   }));
 }
 
