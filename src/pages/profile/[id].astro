@@ -4,6 +4,7 @@ import ProfileView from "../../components/profile/ProfileView";
 import { getProfile, listRecipes } from "../../db/recipes";
 import "../../styles/recipes.css";
 import "../../styles/profile.css";
+import "../../styles/forms.css";
 
 const { id } = Astro.params;
 const profile = id ? await getProfile(id) : null;
@@ -36,6 +37,6 @@ const data = {
     />
   </head>
   <body>
-    <ProfileView profile={data} recipes={recipes} initialTab={tab} initialSort={sort} client:load />
+    <ProfileView profile={data} isOwner={Astro.locals.user?.id === profile.id} recipes={recipes} initialTab={tab} initialSort={sort} client:load />
   </body>
 </html>

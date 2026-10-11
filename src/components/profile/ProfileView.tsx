@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import AccountMenu from "../AccountMenu";
+import ImageUpload from "../forms/ImageUpload";
 import Avatar, { TONES, hash } from "../recipes/Avatar";
 import RecipeCard from "../recipes/RecipeCard";
 import RecipeModal from "../recipes/RecipeModal";
@@ -29,11 +31,13 @@ const byTop = (a: RecipeSummary, b: RecipeSummary) =>
 
 export default function ProfileView({
   profile,
+  isOwner,
   recipes,
   initialTab,
   initialSort,
 }: {
   profile: Profile;
+  isOwner: boolean;
   recipes: RecipeSummary[];
   initialTab: Tab;
   initialSort: Sort;
@@ -41,6 +45,7 @@ export default function ProfileView({
   const [tab, setTab] = useState<Tab>(initialTab);
   const [sort, setSort] = useState<Sort>(initialSort);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
 
   const recent = useMemo(() => [...recipes].sort(byRecent), [recipes]);
   const top = useMemo(() => [...recipes].filter((r) => r.ratingCount > 0).sort(byTop), [recipes]);
@@ -73,6 +78,7 @@ export default function ProfileView({
           <img src="/logo.png" alt="bodyworks" />
         </a>
         <a href="/recipes" className="pf-back">← All recipes</a>
+        <AccountMenu />
       </header>
 
       <div className="pf-wrap">
@@ -88,7 +94,17 @@ export default function ProfileView({
               {" · "}Joined {joined}
             </p>
           </div>
+          {isOwner && (
+            <div className="pf-owner-actions">
+              <button type="button" className="rb-btn" onClick={() => setEditing((e) => !e)}>
+                {editing ? "Close" : "Customize profile"}
+              </button>
+              <a className="rb-btn rb-btn-solid" href="/recipes/new">+ Add recipe</a>
+            </div>
+          )}
         </section>
+
+        {isOwner && editing && <ProfileEditor profile={profile} onDone={() => location.reload()} />}
 
         <nav className="pf-tabs" role="tablist" aria-label="Profile sections">
           {TABS.map((t) => (
@@ -106,7 +122,13 @@ export default function ProfileView({
         </nav>
 
         {recipes.length === 0 ? (
-          <p className="rb-empty">{profile.name} hasn't posted any recipes yet.</p>
+          <p className="rb-empty">
+            {isOwner ? (
+              <>You haven't posted any recipes yet. <a href="/recipes/new">Add your first one</a>.</>
+            ) : (
+              <>{profile.name} hasn't posted any recipes yet.</>
+            )}
+          </p>
         ) : tab === "home" ? (
           <div className="pf-home">
             <Shelf
@@ -178,6 +200,48 @@ function Shelf({
         {recipes.map((r) => (
           <RecipeCard key={r.slug} recipe={r} onClick={() => onOpen(r.slug)} />
         ))}
+      </div>
+    </section>
+  );
+}
+
+
+function ProfileEditor({ profile, onDone }: { profile: Profile; onDone: () => void }) {
+  const [name, setName] = useState(profile.name);
+  const [image, setImage] = useState<string | null>(profile.image);
+  const [banner, setBanner] = useState<string | null>(profile.banner);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    setError(null);
+    setBusy(true);
+    const res = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, image, banner }),
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    if (!res || !res.ok) {
+      setBusy(false);
+      return setError(data?.error || "Couldn't save. Try again.");
+    }
+    onDone();
+  }
+
+  return (
+    <section className="pe" aria-label="Customize profile">
+      <label className="af-field">
+        Display name
+        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} />
+      </label>
+      <ImageUpload label="Profile picture" shape="round" value={image} onChange={setImage} />
+      <ImageUpload label="Banner (wide image works best)" value={banner} onChange={setBanner} />
+      {error && <p className="rb-msg" role="alert">{error}</p>}
+      <div>
+        <button type="button" className="rb-btn rb-btn-solid" disabled={busy || !name.trim()} onClick={save}>
+          {busy ? "Saving…" : "Save changes"}
+        </button>
       </div>
     </section>
   );

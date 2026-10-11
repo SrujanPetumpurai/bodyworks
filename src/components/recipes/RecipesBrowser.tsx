@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import AccountMenu from "../AccountMenu";
 import Avatar from "./Avatar";
 import RecipeCard from "./RecipeCard";
 import RecipeModal from "./RecipeModal";
@@ -71,9 +72,12 @@ export default function RecipesBrowser({ foods, recipes }: { foods: Food[]; reci
     <div className="rb-page">
       <header className="rb-header">
         <div className="rb-header-inner">
-          <a href="/" className="rb-logo">
-            <img src="/logo.png" alt="bodyworks" />
-          </a>
+          <div className="rb-header-left">
+            <a href="/" className="rb-logo">
+              <img src="/logo.png" alt="bodyworks" />
+            </a>
+            <AccountMenu />
+          </div>
 
           <div className="rb-header-right">
             <input

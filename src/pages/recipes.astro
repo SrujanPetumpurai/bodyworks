@@ -3,6 +3,7 @@ export const prerender = false;
 import RecipesBrowser from "../components/recipes/RecipesBrowser";
 import { listFoods, listRecipes } from "../db/recipes";
 import "../styles/recipes.css";
+import "../styles/forms.css";
 
 const [foods, recipes] = await Promise.all([listFoods(), listRecipes()]);
 const foodOptions = foods.map((f) => ({ slug: f.slug, name: f.name }));

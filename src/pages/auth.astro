@@ -1,0 +1,26 @@
+---
+export const prerender = false;
+import AuthForm from "../components/forms/AuthForm";
+import "../styles/recipes.css";
+import "../styles/forms.css";
+
+if (Astro.locals.user) return Astro.redirect("/recipes");
+const next = Astro.url.searchParams.get("next") ?? "/recipes";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in — bodyworks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Karla:wght@400;500;700&family=DM+Serif+Display&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <AuthForm next={next} client:load />
+  </body>
+</html>
