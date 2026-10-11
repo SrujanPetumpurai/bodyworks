@@ -1,0 +1,17 @@
+---
+export const prerender = false;
+import Page from "../../layouts/Page.astro";
+import RecipeForm from "../../components/forms/RecipeForm";
+import { listFoods } from "../../db/recipes";
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect("/auth?next=/recipes/new");
+
+const foods = (await listFoods()).map((f) => f.name);
+---
+
+<Page title="Add recipe">
+  <main class="rf-wrap">
+    <RecipeForm foods={foods} userId={user.id} client:load />
+  </main>
+</Page>

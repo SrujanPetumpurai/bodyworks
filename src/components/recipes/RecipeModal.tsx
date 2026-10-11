@@ -72,6 +72,13 @@ export default function RecipeModal({ slug, onClose }: { slug: string; onClose: 
     setMsg("Thanks for rating!");
   }
 
+  async function removeRecipe() {
+    if (!confirm("Delete this recipe? This can't be undone.")) return;
+    const res = await fetch(`/api/recipes/${slug}`, { method: "DELETE" }).catch(() => null);
+    if (!res || !res.ok) return setMsg("Couldn't delete the recipe.");
+    location.reload();
+  }
+
   const shown = hover ?? Math.round(avg);
 
   return (
@@ -120,6 +127,13 @@ export default function RecipeModal({ slug, onClose }: { slug: string; onClose: 
                   {recipe.author && <p className="rb-muted">
                       by <a className="rb-author-name" href={`/profile/${recipe.author.id}`}>{recipe.author.name}</a>
                     </p>}
+
+                  {session && recipe.author && session.user.id === recipe.author.id && (
+                    <div className="rb-links">
+                      <a href={`/recipes/${slug}/edit`}>Edit</a>
+                      <button type="button" className="rb-link-danger" onClick={removeRecipe}>Delete</button>
+                    </div>
+                  )}
 
                   <div className="rb-rate-stars" onMouseLeave={() => setHover(null)}>
                     {[1, 2, 3, 4, 5].map((n) => (

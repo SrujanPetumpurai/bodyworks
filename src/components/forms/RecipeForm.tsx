@@ -1,0 +1,204 @@
+import { useState } from "react";
+import ImageUpload from "./ImageUpload";
+
+const UNITS = ["g", "ml", "tsp", "tbsp", "cup", "piece"];
+
+export type RecipeFormValues = {
+  name: string;
+  description: string;
+  cuisine: string;
+  prepTimeMinutes: string;
+  servings: string;
+  difficulty: string;
+  imageUrl: string | null;
+  videoUrl: string;
+  ingredients: { name: string; amount: string; unit: string }[];
+  steps: string[];
+};
+
+export const EMPTY_RECIPE: RecipeFormValues = {
+  name: "",
+  description: "",
+  cuisine: "",
+  prepTimeMinutes: "",
+  servings: "",
+  difficulty: "",
+  imageUrl: null,
+  videoUrl: "",
+  ingredients: [{ name: "", amount: "", unit: "g" }],
+  steps: [""],
+};
+
+export default function RecipeForm({
+  foods,
+  initial = EMPTY_RECIPE,
+  editSlug,
+  userId,
+}: {
+  foods: string[];
+  initial?: RecipeFormValues;
+  editSlug?: string;
+  userId: string;
+}) {
+  const [v, setV] = useState<RecipeFormValues>(initial);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const set = <K extends keyof RecipeFormValues>(key: K, value: RecipeFormValues[K]) =>
+    setV((s) => ({ ...s, [key]: value }));
+
+  const setIng = (i: number, patch: Partial<RecipeFormValues["ingredients"][number]>) =>
+    set("ingredients", v.ingredients.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const setStep = (i: number, text: string) => set("steps", v.steps.map((x, j) => (j === i ? text : x)));
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    const res = await fetch(editSlug ? `/api/recipes/${editSlug}` : "/api/recipes", {
+      method: editSlug ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...v,
+        ingredients: v.ingredients.map((i) => ({ ...i, amount: Number(i.amount) })),
+      }),
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    if (!res || !res.ok) {
+      setBusy(false);
+      return setError(data?.error || "Couldn't save. Check your connection and try again.");
+    }
+    location.href = `/profile/${userId}?tab=recipes`;
+  }
+
+  return (
+    <form className="rf" onSubmit={submit}>
+      <h1>{editSlug ? "Edit recipe" : "Add a recipe"}</h1>
+
+      <label className="af-field">
+        Name
+        <input value={v.name} onChange={(e) => set("name", e.target.value)} required maxLength={100} />
+      </label>
+
+      <label className="af-field">
+        Description
+        <textarea value={v.description} onChange={(e) => set("description", e.target.value)} required maxLength={1000} rows={3} />
+      </label>
+
+      <ImageUpload label="Photo" value={v.imageUrl} onChange={(url) => set("imageUrl", url)} />
+
+      <div className="rf-row">
+        <label className="af-field">
+          Cuisine
+          <input value={v.cuisine} onChange={(e) => set("cuisine", e.target.value)} maxLength={40} placeholder="e.g. Indian" />
+        </label>
+        <label className="af-field">
+          Prep time (min)
+          <input type="number" min={1} value={v.prepTimeMinutes} onChange={(e) => set("prepTimeMinutes", e.target.value)} />
+        </label>
+        <label className="af-field">
+          Servings
+          <input type="number" min={1} value={v.servings} onChange={(e) => set("servings", e.target.value)} />
+        </label>
+        <label className="af-field">
+          Difficulty
+          <select value={v.difficulty} onChange={(e) => set("difficulty", e.target.value)}>
+            <option value="">—</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </label>
+      </div>
+
+      <label className="af-field">
+        Video link (optional)
+        <input type="url" value={v.videoUrl} onChange={(e) => set("videoUrl", e.target.value)} placeholder="https://youtube.com/…" />
+      </label>
+
+      <fieldset className="rf-group">
+        <legend>Ingredients</legend>
+        <datalist id="rf-foods">
+          {foods.map((f) => <option key={f} value={f} />)}
+        </datalist>
+        {v.ingredients.map((ing, i) => (
+          <div className="rf-ing" key={i}>
+            <input
+              list="rf-foods"
+              placeholder="Ingredient (pick or type a new one)"
+              aria-label={`Ingredient ${i + 1} name`}
+              value={ing.name}
+              onChange={(e) => setIng(i, { name: e.target.value })}
+              maxLength={60}
+            />
+            <input
+              type="number"
+              min="0"
+              step="any"
+              placeholder="Amount"
+              aria-label={`Ingredient ${i + 1} amount`}
+              value={ing.amount}
+              onChange={(e) => setIng(i, { amount: e.target.value })}
+            />
+            <select aria-label={`Ingredient ${i + 1} unit`} value={ing.unit} onChange={(e) => setIng(i, { unit: e.target.value })}>
+              {UNITS.map((u) => <option key={u}>{u}</option>)}
+            </select>
+            <button
+              type="button"
+              className="rf-x"
+              aria-label={`Remove ingredient ${i + 1}`}
+              disabled={v.ingredients.length === 1}
+              onClick={() => set("ingredients", v.ingredients.filter((_, j) => j !== i))}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="rb-btn"
+          onClick={() => set("ingredients", [...v.ingredients, { name: "", amount: "", unit: "g" }])}
+        >
+          + Add ingredient
+        </button>
+      </fieldset>
+
+      <fieldset className="rf-group">
+        <legend>Steps</legend>
+        {v.steps.map((s, i) => (
+          <div className="rf-step" key={i}>
+            <span className="rf-num">{i + 1}</span>
+            <textarea
+              rows={2}
+              aria-label={`Step ${i + 1}`}
+              value={s}
+              maxLength={1000}
+              onChange={(e) => setStep(i, e.target.value)}
+            />
+            <button
+              type="button"
+              className="rf-x"
+              aria-label={`Remove step ${i + 1}`}
+              disabled={v.steps.length === 1}
+              onClick={() => set("steps", v.steps.filter((_, j) => j !== i))}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button type="button" className="rb-btn" onClick={() => set("steps", [...v.steps, ""])}>
+          + Add step
+        </button>
+      </fieldset>
+
+      {error && <p className="rb-msg" role="alert">{error}</p>}
+
+      <div className="rf-actions">
+        <button className="rb-btn rb-btn-solid" disabled={busy}>
+          {busy ? "Saving…" : editSlug ? "Save changes" : "Publish recipe"}
+        </button>
+        <a className="rb-btn" href={`/profile/${userId}?tab=recipes`}>Cancel</a>
+      </div>
+    </form>
+  );
+}

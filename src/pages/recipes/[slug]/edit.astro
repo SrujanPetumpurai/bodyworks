@@ -1,0 +1,38 @@
+---
+export const prerender = false;
+import Page from "../../../layouts/Page.astro";
+import RecipeForm from "../../../components/forms/RecipeForm";
+import { getRecipeBySlug, listFoods } from "../../../db/recipes";
+
+const user = Astro.locals.user;
+const { slug } = Astro.params;
+if (!user) return Astro.redirect(`/auth?next=/recipes/${slug}/edit`);
+
+const recipe = slug ? await getRecipeBySlug(slug) : null;
+// don't reveal whether someone else's recipe exists
+if (!recipe || recipe.author?.id !== user.id) return new Response("Not found", { status: 404 });
+
+const foods = (await listFoods()).map((f) => f.name);
+const initial = {
+  name: recipe.name,
+  description: recipe.description,
+  cuisine: recipe.cuisine ?? "",
+  prepTimeMinutes: recipe.prepTimeMinutes?.toString() ?? "",
+  servings: recipe.servings?.toString() ?? "",
+  difficulty: recipe.difficulty ?? "",
+  imageUrl: recipe.imageUrl,
+  videoUrl: recipe.videoUrl ?? "",
+  ingredients: recipe.ingredients.map((i) => ({
+    name: i.food.name,
+    amount: String(Number(i.amount)),
+    unit: i.unit,
+  })),
+  steps: recipe.steps.map((s) => s.instruction),
+};
+---
+
+<Page title={`Edit ${recipe.name}`}>
+  <main class="rf-wrap">
+    <RecipeForm foods={foods} initial={initial} editSlug={recipe.slug} userId={user.id} client:load />
+  </main>
+</Page>

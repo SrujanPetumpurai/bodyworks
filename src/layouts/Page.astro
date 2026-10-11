@@ -1,0 +1,37 @@
+---
+import AccountMenu from "../components/AccountMenu";
+import "../styles/recipes.css";
+import "../styles/forms.css";
+import "../styles/profile.css";
+
+const { title, nav = true } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} — bodyworks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Karla:wght@400;500;700&family=DM+Serif+Display&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="rb-page">
+      {
+        nav && (
+          <header class="pf-topbar">
+            <a href="/recipes" class="rb-logo">
+              <img src="/logo.png" alt="bodyworks" />
+            </a>
+            <AccountMenu client:load />
+          </header>
+        )
+      }
+      <slot />
+    </div>
+  </body>
+</html>
