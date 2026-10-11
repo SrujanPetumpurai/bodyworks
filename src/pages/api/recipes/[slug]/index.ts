@@ -2,7 +2,6 @@ import type { APIRoute } from "astro";
 import { deleteRecipe, getRecipeBySlug, updateRecipe } from "../../../../db/recipes";
 import { json, parseRecipeInput } from "../../../../lib/recipe-input";
 
-
 export const prerender = false;
 
 export const GET: APIRoute = async ({ params }) => {
