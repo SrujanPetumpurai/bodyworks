@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { getRecipeBySlug } from "../../../db/recipes";
+import { getRecipeBySlug } from "../../../../db/recipes"
 
 export const prerender = false;
 
@@ -18,4 +18,4 @@ export const GET: APIRoute = async ({ params }) => {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
-};
+}; 
