@@ -18,4 +18,4 @@ export const GET: APIRoute = async ({ params }) => {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
-};
+}; 
