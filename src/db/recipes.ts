@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "./index";
-import { recipes, recipeRatings } from "./schema";
+import { recipes, recipeRatings, user } from "./schema";
 
 export type RecipeSummary = {
   slug: string;
@@ -15,12 +15,17 @@ export type RecipeSummary = {
   ratingCount: number;
   ingredientNames: string[];
   ingredientSlugs: string[];
+  createdAt: string;
 };
 
 // Recipes must contain EVERY selected ingredient (the "what can I make
 // with X and Y" pattern), not just any of them.
-export async function listRecipes(ingredientSlugs?: string[]): Promise<RecipeSummary[]> {
+export async function listRecipes(
+  ingredientSlugs?: string[],
+  authorId?: string,
+): Promise<RecipeSummary[]> {
   const rows = await db.query.recipes.findMany({
+    where: authorId ? eq(recipes.authorId, authorId) : undefined,
     orderBy: (r, { desc }) => desc(r.createdAt),
     with: {
       author: true,
@@ -53,7 +58,24 @@ export async function listRecipes(ingredientSlugs?: string[]): Promise<RecipeSum
     authorId: r.author?.id ?? null,
     ingredientNames: r.ingredients.slice(0, 4).map((ri) => ri.food.name),
     ingredientSlugs: r.ingredients.map((ri) => ri.food.slug),
+    createdAt: r.createdAt.toISOString(),
   }));
+}
+
+// Public profile info only — never select email/session data here.
+export async function getProfile(id: string) {
+  const [row] = await db
+    .select({
+      id: user.id,
+      name: user.name,
+      image: user.image,
+      banner: user.banner,
+      joinedAt: user.createdAt,
+    })
+    .from(user)
+    .where(eq(user.id, id))
+    .limit(1);
+  return row ?? null;
 }
 
 export async function getRecipeBySlug(slug: string) {

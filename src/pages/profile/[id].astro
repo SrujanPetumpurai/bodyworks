@@ -1,0 +1,41 @@
+---
+export const prerender = false;
+import ProfileView from "../../components/profile/ProfileView";
+import { getProfile, listRecipes } from "../../db/recipes";
+import "../../styles/recipes.css";
+import "../../styles/profile.css";
+
+const { id } = Astro.params;
+const profile = id ? await getProfile(id) : null;
+if (!profile) return new Response("Profile not found", { status: 404 });
+
+const recipes = await listRecipes(undefined, profile.id);
+
+const tab = Astro.url.searchParams.get("tab") === "recipes" ? "recipes" : "home";
+const sort = Astro.url.searchParams.get("sort") === "top" ? "top" : "recent";
+
+const data = {
+  id: profile.id,
+  name: profile.name,
+  image: profile.image,
+  banner: profile.banner,
+  joinedAt: profile.joinedAt.toISOString(),
+};
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{profile.name} — bodyworks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Karla:wght@400;500;700&family=DM+Serif+Display&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <ProfileView profile={data} recipes={recipes} initialTab={tab} initialSort={sort} client:load />
+  </body>
+</html>

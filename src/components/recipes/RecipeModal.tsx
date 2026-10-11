@@ -11,7 +11,7 @@ type Detail = {
   servings: number | null;
   avgRating: string | number;
   ratingCount: number;
-  author: { name: string } | null;
+  author: { id: string; name: string } | null;
   ingredients: { id: number; amount: string; unit: string; food: { name: string } }[];
   steps: { id: number; stepNumber: number; instruction: string }[];
 };
@@ -117,7 +117,9 @@ export default function RecipeModal({ slug, onClose }: { slug: string; onClose: 
                 <div className="rb-rate">
                   <p>{recipe.description}</p>
                   {recipe.difficulty && <p className="rb-muted">Difficulty: {recipe.difficulty}</p>}
-                  {recipe.author && <p className="rb-muted">by {recipe.author.name}</p>}
+                  {recipe.author && <p className="rb-muted">
+                      by <a className="rb-author-name" href={`/profile/${recipe.author.id}`}>{recipe.author.name}</a>
+                    </p>}
 
                   <div className="rb-rate-stars" onMouseLeave={() => setHover(null)}>
                     {[1, 2, 3, 4, 5].map((n) => (

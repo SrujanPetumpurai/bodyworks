@@ -1,0 +1,73 @@
+/* Profile page — YouTube-style channel layout in the recipe-card theme */
+
+.pf-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.5rem; height: 72px; background: var(--band); border-bottom: 2px solid var(--ink);
+}
+.pf-topbar .rb-logo { height: 72px; }
+.pf-topbar .rb-logo img { height: 44px; }
+.pf-back { color: #fff; font-weight: 700; text-decoration: none; }
+.pf-back:hover { text-decoration: underline; }
+
+.pf-wrap { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.5rem 5rem; box-sizing: border-box; }
+
+/* banner: wide strip, like a channel banner */
+.pf-banner {
+  width: 100%; aspect-ratio: 6 / 1; min-height: 120px; border-radius: 12px;
+  background-size: cover; background-position: center; border: 2px solid var(--ink);
+  box-shadow: 0 10px 16px -10px rgba(var(--shadow-c), 0.55);
+}
+
+/* avatar + name row */
+.pf-head { display: flex; align-items: center; gap: 1.5rem; padding: 1.2rem 0.5rem 0.4rem; }
+.pf-head .rb-avatar { border: 3px solid var(--paper); box-shadow: 0 0 0 2px var(--ink); }
+.pf-meta h1 { font-size: 3rem; margin: 0; line-height: 1.05; }
+.pf-stats { margin: 0.3rem 0 0; color: var(--sub); font-weight: 600; font-size: 0.92rem; }
+
+/* tabs with underline */
+.pf-tabs { display: flex; gap: 0.4rem; margin-top: 1rem; border-bottom: 2px solid var(--edge); }
+.pf-tabs button {
+  position: relative; border: none; background: none; cursor: pointer; color: var(--sub);
+  font: 700 0.95rem var(--font-body); letter-spacing: 0.04em; text-transform: uppercase; padding: 0.8rem 1.3rem;
+}
+.pf-tabs button:hover { color: var(--ink); }
+.pf-tabs button.on { color: var(--ink); }
+.pf-tabs button.on::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 3px; background: var(--cta);
+}
+.pf-tabs button:focus-visible,
+.pf-sorts button:focus-visible,
+.pf-shelf-head button:focus-visible { outline: 3px solid var(--cta); outline-offset: 2px; }
+
+/* sort chips */
+.pf-sorts { display: flex; gap: 0.5rem; margin: 1.4rem 0 1.6rem; }
+.pf-sorts button {
+  border: 1.5px solid var(--ink); background: var(--paper); color: var(--ink); cursor: pointer;
+  font: 700 0.85rem var(--font-body); padding: 0.4rem 1rem; border-radius: 999px;
+}
+.pf-sorts button:hover { background: var(--panel); }
+.pf-sorts button.on { background: var(--ink); color: var(--paper); }
+
+/* home shelves */
+.pf-shelf { margin-top: 2rem; }
+.pf-shelf-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.2rem; }
+.pf-shelf-head h2 { font-size: 2.2rem; margin: 0; line-height: 1.1; }
+.pf-shelf-head button { border: none; background: none; cursor: pointer; color: var(--cta); font: 700 0.9rem var(--font-body); }
+.pf-shelf-head button:hover { text-decoration: underline; }
+
+.pf-grid { grid-template-columns: repeat(3, 1fr); padding-top: 0.6rem; }
+.pf-grid .rb-card-media { height: 200px; }
+.pf-grid .rb-card-overlay h3 { font-size: 1.7rem; }
+
+.rb-author-link { display: inline-flex; border-radius: 50%; }
+.rb-author-link:focus-visible { outline: 3px solid var(--cta); outline-offset: 2px; }
+.rb-author-name { color: var(--cta); font-weight: 700; }
+
+@media (max-width: 900px) { .pf-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 760px) {
+  .pf-banner { aspect-ratio: 3 / 1; }
+  .pf-head { gap: 1rem; }
+  .pf-head .rb-avatar { width: 84px !important; height: 84px !important; font-size: 32px !important; }
+  .pf-meta h1 { font-size: 2.1rem; }
+  .pf-grid { grid-template-columns: 1fr; }
+}
