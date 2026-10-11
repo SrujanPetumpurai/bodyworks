@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { deleteRecipe, getRecipeBySlug, updateRecipe } from "../../../../db/recipes";
 import { json, parseRecipeInput } from "../../../../lib/recipe-input";
 
+
 export const prerender = false;
 
 export const GET: APIRoute = async ({ params }) => {
@@ -47,3 +48,4 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
   if (!ok) return json({ error: "Recipe not found, or it isn't yours." }, 404);
   return json({ deleted: true });
 };
+
