@@ -16,6 +16,7 @@ export type RecipeSummary = {
   avgRating: number;
   ratingCount: number;
   ingredientSlugs: string[];
+  createdAt: string;
 };
 
 const RATING_OPTIONS = [

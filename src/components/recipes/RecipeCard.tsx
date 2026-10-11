@@ -49,7 +49,19 @@ export default function RecipeCard({ recipe, onClick }: { recipe: RecipeSummary;
           <small>{recipe.ratingCount ? `(${recipe.ratingCount})` : ""}</small>
         </div>
 
-        <Avatar name={recipe.authorName ?? "bodyworks"} image={recipe.authorImage} />
+        {recipe.authorId ? (
+          <a
+            href={`/profile/${recipe.authorId}`}
+            className="rb-author-link"
+            title={`${recipe.authorName ?? "Profile"} — view profile`}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <Avatar name={recipe.authorName ?? "bodyworks"} image={recipe.authorImage} />
+          </a>
+        ) : (
+          <Avatar name={recipe.authorName ?? "bodyworks"} image={recipe.authorImage} />
+        )}
       </div>
     </div>
   );
