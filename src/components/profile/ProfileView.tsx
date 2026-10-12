@@ -75,7 +75,7 @@ export default function ProfileView({
     <div className="rb-page pf-page">
       <header className="pf-topbar">
         <a href="/recipes" className="rb-logo">
-          <img src="/logo.png" alt="bodyworks" />
+          bodyworks
         </a>
         <a href="/recipes" className="pf-back">← All recipes</a>
         <AccountMenu />
