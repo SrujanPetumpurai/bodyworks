@@ -58,65 +58,133 @@ export default function RecipesBrowser({ foods, recipes }: { foods: Food[]; reci
 
   const available = foods.filter((f) => !selected.includes(f.slug));
 
-  function onIngredientChange(value: string) {
-    const match = available.find((f) => f.name.toLowerCase() === value.trim().toLowerCase());
-    if (match) {
-      setSelected((s) => [...s, match.slug]);
-      setIngredientInput("");
-    } else {
-      setIngredientInput(value);
+  const [ingredientMsg, setIngredientMsg] = useState<string | null>(null);
+
+  // most-used ingredients across recipes, as one-click suggestions
+  const popular = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of recipes) for (const slug of r.ingredientSlugs) counts.set(slug, (counts.get(slug) ?? 0) + 1);
+    return foods
+      .filter((f) => !selected.includes(f.slug))
+      .sort((a, b) => (counts.get(b.slug) ?? 0) - (counts.get(a.slug) ?? 0))
+      .slice(0, 8);
+  }, [recipes, foods, selected]);
+
+  function addIngredient(raw: string) {
+    const q = raw.trim().toLowerCase();
+    if (!q) return;
+    // exact name first, then the first food whose name contains what was typed
+    const match =
+      available.find((f) => f.name.toLowerCase() === q) ??
+      available.find((f) => f.name.toLowerCase().includes(q));
+    if (!match) {
+      setIngredientMsg(
+        foods.some((f) => f.name.toLowerCase().includes(q))
+          ? "Already added."
+          : `No ingredient matches "${raw.trim()}".`,
+      );
+      return;
     }
+    setSelected((s) => [...s, match.slug]);
+    setIngredientInput("");
+    setIngredientMsg(null);
+  }
+
+  // picking a suggestion from the datalist fills the exact name: add it straight away
+  function onIngredientChange(value: string) {
+    setIngredientMsg(null);
+    if (available.some((f) => f.name.toLowerCase() === value.trim().toLowerCase())) addIngredient(value);
+    else setIngredientInput(value);
   }
 
   return (
     <div className="rb-page">
-      <header className="rb-header">
-        <div className="rb-header-inner">
-          <div className="rb-header-left">
-            <a href="/" className="rb-logo">
-              <img src="/logo.png" alt="bodyworks" />
-            </a>
-            <AccountMenu />
-          </div>
+      <header className="rb-topbar">
+        <a href="/" className="rb-wordmark">bodyworks</a>
+        <nav className="rb-nav" aria-label="Main">
+          <a href="/daily-requirements">Daily needs</a>
+          <a href="/recipes" aria-current="page">Recipes</a>
+        </nav>
+        <AccountMenu />
+      </header>
 
-          <div className="rb-header-right">
+      <section className="rb-hero">
+        <h1 className="rb-title">Recipes</h1>
+        <p className="rb-lede">High-protein meals. Add what you have and see what you can cook.</p>
+
+        <div className="rb-controls">
+          <div>
+            <label className="rb-field-label" htmlFor="rb-search">Search</label>
             <input
+              id="rb-search"
               className="rb-search"
               type="search"
               placeholder="Search recipes"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
+          </div>
 
-            <div className="rb-ingredients">
-              <span className="rb-ingredients-label">Ingredients:</span>
+          <div>
+            <label className="rb-field-label" htmlFor="rb-ing">Ingredients you have</label>
+            <div className="rb-ing-field">
+              {selected.map((slug) => {
+                const name = foods.find((f) => f.slug === slug)?.name ?? slug;
+                return (
+                  <button
+                    key={slug}
+                    type="button"
+                    className="rb-chip"
+                    onClick={() => setSelected((s) => s.filter((x) => x !== slug))}
+                    aria-label={`Remove ${name}`}
+                  >
+                    {name} ×
+                  </button>
+                );
+              })}
               <input
-                className="rb-ingredient-input"
+                id="rb-ing"
+                className="rb-ing-input"
                 list="rb-food-list"
-                placeholder="Add one…"
+                placeholder={selected.length ? "Add another…" : "Type an ingredient, press Enter"}
                 value={ingredientInput}
                 onChange={(e) => onIngredientChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addIngredient(ingredientInput);
+                  } else if (e.key === "Backspace" && !ingredientInput && selected.length) {
+                    setSelected((s) => s.slice(0, -1));
+                  }
+                }}
               />
               <datalist id="rb-food-list">
                 {available.map((f) => (
                   <option key={f.slug} value={f.name} />
                 ))}
               </datalist>
-              {selected.map((slug) => (
-                <button
-                  key={slug}
-                  type="button"
-                  className="rb-chip"
-                  onClick={() => setSelected((s) => s.filter((x) => x !== slug))}
-                  aria-label={`Remove ${slug}`}
-                >
-                  {foods.find((f) => f.slug === slug)?.name ?? slug} ×
-                </button>
-              ))}
+              <button type="button" className="rb-add-btn" onClick={() => addIngredient(ingredientInput)}>
+                Add
+              </button>
             </div>
+            {ingredientMsg ? (
+              <p className="rb-hint warn" role="status">{ingredientMsg}</p>
+            ) : selected.length > 0 ? (
+              <p className="rb-hint">Showing recipes that use all {selected.length} of these.</p>
+            ) : null}
+            {popular.length > 0 && (
+              <div className="rb-suggest">
+                <span>Popular:</span>
+                {popular.map((f) => (
+                  <button key={f.slug} type="button" onClick={() => addIngredient(f.name)}>
+                    + {f.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      </header>
+      </section>
 
       <div className="rb-container">
         <div className="rb-body">
@@ -159,7 +227,9 @@ export default function RecipesBrowser({ foods, recipes }: { foods: Food[]; reci
           </aside>
 
           <section>
-            <h1 className="rb-title">Recipes</h1>
+            <div className="rb-results-head">
+              <span>{filtered.length} {filtered.length === 1 ? "recipe" : "recipes"}</span>
+            </div>
             {filtered.length === 0 ? (
               <p className="rb-empty">No recipes match. Try removing a filter.</p>
             ) : (

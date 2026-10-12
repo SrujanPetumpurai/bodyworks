@@ -31,11 +31,11 @@ export default function RecipeCard({ recipe, onClick }: { recipe: RecipeSummary;
         )}
 
         {recipe.cuisine && <span className="rb-card-cuisine">{recipe.cuisine}</span>}
+      </div>
 
-        <div className="rb-card-overlay">
-          <h3>{recipe.name}</h3>
-          <p>{recipe.description}</p>
-        </div>
+      <div className="rb-card-body">
+        <h3>{recipe.name}</h3>
+        <p>{recipe.description}</p>
       </div>
 
       <div className="rb-card-bar">

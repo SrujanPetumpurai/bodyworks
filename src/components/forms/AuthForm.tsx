@@ -32,7 +32,7 @@ export default function AuthForm({ next }: { next: string }) {
 
   return (
     <div className="rb-page af-page">
-      <a href="/recipes" className="af-logo"><img src="/logo.png" alt="bodyworks" /></a>
+      <a href="/recipes" className="af-logo rb-wordmark">bodyworks</a>
       <form className="af-card" onSubmit={submit}>
         <h1>{mode === "in" ? "Sign in" : "Create account"}</h1>
         <p className="rb-muted">

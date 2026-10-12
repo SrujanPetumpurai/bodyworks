@@ -1,4 +1,4 @@
-const TONES = ["#1f6f5c", "#ff6b5b", "#f4a300", "#3f7cac"];
+const TONES = ["#2d5a43", "#7a4a24", "#254f70", "#53406e", "#6b5612", "#2e4d47"];
 
 function hash(s: string) {
   let h = 0;
