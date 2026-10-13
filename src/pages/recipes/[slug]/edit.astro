@@ -8,7 +8,7 @@ const user = Astro.locals.user;
 const { slug } = Astro.params;
 if (!user) return Astro.redirect(`/auth?next=/recipes/${slug}/edit`);
 
-const recipe = slug ? await getRecipeBySlug(slug) : null;
+const recipe = slug ? await getRecipeBySlug(slug, user.id) : null;
 // don't reveal whether someone else's recipe exists
 if (!recipe || recipe.author?.id !== user.id) return new Response("Not found", { status: 404 });
 

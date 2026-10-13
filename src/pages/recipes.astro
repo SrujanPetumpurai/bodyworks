@@ -5,7 +5,7 @@ import { listFoods, listRecipes } from "../db/recipes";
 import "../styles/recipes.css";
 import "../styles/forms.css";
 
-const [foods, recipes] = await Promise.all([listFoods(), listRecipes()]);
+const [foods, recipes] = await Promise.all([listFoods(), listRecipes({ viewerId: Astro.locals.user?.id })]);
 const foodOptions = foods.map((f) => ({ slug: f.slug, name: f.name }));
 ---
 

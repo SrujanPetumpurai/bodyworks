@@ -4,13 +4,13 @@ import { json, parseRecipeInput } from "../../../lib/recipe-input";
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, locals }) => {
   const ingredientsParam = url.searchParams.get("ingredients");
   const ingredientSlugs = ingredientsParam
     ? ingredientsParam.split(",").map((s) => s.trim()).filter(Boolean)
     : undefined;
 
-  const recipes = await listRecipes(ingredientSlugs);
+  const recipes = await listRecipes({ ingredientSlugs, viewerId: locals.user?.id });
   return new Response(JSON.stringify(recipes), {
     status: 200,
     headers: { "Content-Type": "application/json" },

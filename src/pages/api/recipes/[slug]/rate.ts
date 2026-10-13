@@ -14,9 +14,14 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
     return new Response(JSON.stringify({ error: "slug is required" }), { status: 400 });
   }
 
-  const recipe = await getRecipeBySlug(slug);
+  const recipe = await getRecipeBySlug(slug, currentUser.id);
   if (!recipe) {
     return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
+  }
+
+  // only people who can see a recipe can rate it; private ones can't be rated at all
+  if (recipe.visibility === "private") {
+    return new Response(JSON.stringify({ error: "Private recipes can't be rated" }), { status: 403 });
   }
 
   const body = await request.json().catch(() => null);

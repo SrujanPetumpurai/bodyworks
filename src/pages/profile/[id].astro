@@ -10,7 +10,7 @@ const { id } = Astro.params;
 const profile = id ? await getProfile(id) : null;
 if (!profile) return new Response("Profile not found", { status: 404 });
 
-const recipes = await listRecipes(undefined, profile.id);
+const recipes = await listRecipes({ authorId: profile.id, viewerId: Astro.locals.user?.id });
 
 const tab = Astro.url.searchParams.get("tab") === "recipes" ? "recipes" : "home";
 const sort = Astro.url.searchParams.get("sort") === "top" ? "top" : "recent";

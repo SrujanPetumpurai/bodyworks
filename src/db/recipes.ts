@@ -1,6 +1,7 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "./index";
 import { foods, recipes, recipeIngredients, recipeRatings, recipeSteps, user } from "./schema";
+import { canViewRecipe, recipeVisibleTo } from "./recipe-access";
 
 export type RecipeSummary = {
   slug: string;
@@ -20,12 +21,15 @@ export type RecipeSummary = {
 
 // Recipes must contain EVERY selected ingredient (the "what can I make
 // with X and Y" pattern), not just any of them.
-export async function listRecipes(
-  ingredientSlugs?: string[],
-  authorId?: string,
-): Promise<RecipeSummary[]> {
+// Only returns recipes `viewerId` is allowed to see (logged-out = public only).
+export async function listRecipes(opts: {
+  viewerId?: string | null;
+  ingredientSlugs?: string[];
+  authorId?: string;
+} = {}): Promise<RecipeSummary[]> {
+  const { viewerId, ingredientSlugs, authorId } = opts;
   const rows = await db.query.recipes.findMany({
-    where: authorId ? eq(recipes.authorId, authorId) : undefined,
+    where: and(recipeVisibleTo(viewerId), authorId ? eq(recipes.authorId, authorId) : undefined),
     orderBy: (r, { desc }) => desc(r.createdAt),
     with: {
       author: true,
@@ -78,8 +82,10 @@ export async function getProfile(id: string) {
   return row ?? null;
 }
 
-export async function getRecipeBySlug(slug: string) {
-  return db.query.recipes.findFirst({
+// Returns null both when the recipe doesn't exist and when `viewerId` isn't
+// allowed to see it, so callers can't leak the existence of hidden recipes.
+export async function getRecipeBySlug(slug: string, viewerId?: string | null) {
+  const recipe = await db.query.recipes.findFirst({
     where: eq(recipes.slug, slug),
     with: {
       author: { columns: { id: true, name: true, image: true } },
@@ -90,6 +96,8 @@ export async function getRecipeBySlug(slug: string) {
       steps: { orderBy: (s, { asc }) => asc(s.stepNumber) },
     },
   });
+  if (!recipe || !(await canViewRecipe(recipe, viewerId))) return null;
+  return recipe;
 }
 
 export async function rateRecipe(recipeId: number, userId: string, stars: number) {

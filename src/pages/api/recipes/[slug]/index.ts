@@ -4,13 +4,13 @@ import { json, parseRecipeInput } from "../../../../lib/recipe-input";
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, locals }) => {
   const slug = params.slug;
   if (!slug) {
     return new Response(JSON.stringify({ error: "slug is required" }), { status: 400 });
   }
 
-  const recipe = await getRecipeBySlug(slug);
+  const recipe = await getRecipeBySlug(slug, locals.user?.id);
   if (!recipe) {
     return new Response(JSON.stringify({ error: "Recipe not found" }), { status: 404 });
   }
