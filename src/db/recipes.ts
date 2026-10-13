@@ -2,6 +2,10 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "./index";
 import { foods, recipes, recipeIngredients, recipeRatings, recipeSteps, user } from "./schema";
 import { canViewRecipe, recipeVisibleTo } from "./recipe-access";
+import type { RecipePlacement, RecipePlacementInput } from "./communities";
+import { slugify } from "../lib/slug";
+
+export { slugify };
 
 export type RecipeSummary = {
   slug: string;
@@ -17,6 +21,11 @@ export type RecipeSummary = {
   ingredientNames: string[];
   ingredientSlugs: string[];
   createdAt: string;
+  visibility: "private" | "community" | "public";
+  prepTimeMinutes: number | null;
+  difficulty: "easy" | "medium" | "hard" | null;
+  dishId: number | null;
+  dishName: string | null;
 };
 
 // Recipes must contain EVERY selected ingredient (the "what can I make
@@ -26,13 +35,19 @@ export async function listRecipes(opts: {
   viewerId?: string | null;
   ingredientSlugs?: string[];
   authorId?: string;
+  communityId?: number;
 } = {}): Promise<RecipeSummary[]> {
-  const { viewerId, ingredientSlugs, authorId } = opts;
+  const { viewerId, ingredientSlugs, authorId, communityId } = opts;
   const rows = await db.query.recipes.findMany({
-    where: and(recipeVisibleTo(viewerId), authorId ? eq(recipes.authorId, authorId) : undefined),
+    where: and(
+      recipeVisibleTo(viewerId),
+      authorId ? eq(recipes.authorId, authorId) : undefined,
+      communityId !== undefined ? eq(recipes.communityId, communityId) : undefined,
+    ),
     orderBy: (r, { desc }) => desc(r.createdAt),
     with: {
       author: true,
+      dish: true,
       ingredients: {
         with: { food: true },
         orderBy: (ri, { asc }) => asc(ri.sortOrder),
@@ -63,6 +78,11 @@ export async function listRecipes(opts: {
     ingredientNames: r.ingredients.slice(0, 4).map((ri) => ri.food.name),
     ingredientSlugs: r.ingredients.map((ri) => ri.food.slug),
     createdAt: r.createdAt.toISOString(),
+    visibility: r.visibility,
+    prepTimeMinutes: r.prepTimeMinutes,
+    difficulty: r.difficulty,
+    dishId: r.dish?.id ?? null,
+    dishName: r.dish?.name ?? null,
   }));
 }
 
@@ -89,6 +109,8 @@ export async function getRecipeBySlug(slug: string, viewerId?: string | null) {
     where: eq(recipes.slug, slug),
     with: {
       author: { columns: { id: true, name: true, image: true } },
+      dish: { columns: { id: true, name: true } },
+      community: { columns: { id: true, slug: true, name: true } },
       ingredients: {
         with: { food: true },
         orderBy: (ri, { asc }) => asc(ri.sortOrder),
@@ -150,19 +172,7 @@ export type RecipeInput = {
   difficulty: (typeof DIFFICULTIES)[number] | null;
   ingredients: { name: string; amount: number; unit: (typeof UNITS)[number] }[];
   steps: string[];
-};
-
-export function slugify(text: string) {
-  return (
-    text
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 60) || "recipe"
-  );
-}
+} & RecipePlacementInput;
 
 // Existing foods are matched by slug ("Chicken Breast" and "chicken breast"
 // are the same food); unknown ones are created with empty macros.
@@ -212,7 +222,7 @@ async function uniqueSlug(name: string) {
   return `${base}-${Date.now().toString(36)}`;
 }
 
-export async function createRecipe(authorId: string, input: RecipeInput) {
+export async function createRecipe(authorId: string, input: RecipeInput, placement: RecipePlacement) {
   const foodIds = await resolveFoodIds(input.ingredients.map((i) => i.name));
   const slug = await uniqueSlug(input.name);
 
@@ -221,6 +231,9 @@ export async function createRecipe(authorId: string, input: RecipeInput) {
     .values({
       slug,
       authorId,
+      communityId: placement.communityId,
+      dishId: placement.dishId,
+      visibility: placement.visibility,
       name: input.name,
       description: input.description,
       imageUrl: input.imageUrl,
@@ -247,7 +260,7 @@ export async function createRecipe(authorId: string, input: RecipeInput) {
 }
 
 // Returns false if the recipe doesn't exist or isn't owned by this user.
-export async function updateRecipe(slug: string, authorId: string, input: RecipeInput) {
+export async function updateRecipe(slug: string, authorId: string, input: RecipeInput, placement: RecipePlacement) {
   const [existing] = await db
     .select({ id: recipes.id })
     .from(recipes)
@@ -262,6 +275,9 @@ export async function updateRecipe(slug: string, authorId: string, input: Recipe
     db
       .update(recipes)
       .set({
+        communityId: placement.communityId,
+        dishId: placement.dishId,
+        visibility: placement.visibility,
         name: input.name,
         description: input.description,
         imageUrl: input.imageUrl,

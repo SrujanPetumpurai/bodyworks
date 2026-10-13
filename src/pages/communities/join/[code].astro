@@ -1,0 +1,40 @@
+---
+export const prerender = false;
+import Page from "../../../layouts/Page.astro";
+import JoinInvite from "../../../components/communities/JoinInvite";
+import { getCommunityByInvite, getMembership } from "../../../db/communities";
+import "../../../styles/communities.css";
+
+const user = Astro.locals.user;
+const { code } = Astro.params;
+const community = code ? await getCommunityByInvite(code) : null;
+
+// already in? skip the invite screen
+if (community && user) {
+  const m = await getMembership(community.id, user.id);
+  if (m?.status === "active") return Astro.redirect(`/communities/${community.slug}`);
+}
+---
+
+<Page title="Join community">
+  <main class="af-page">
+    <div class="af-card">
+      {
+        community ? (
+          <>
+            <h1>{community.name}</h1>
+            <p>You've been invited to join this {community.visibility} community.</p>
+            {community.description && <p class="rb-muted">{community.description}</p>}
+            <JoinInvite code={code!} name={community.name} signedIn={!!user} client:load />
+          </>
+        ) : (
+          <>
+            <h1>Invite not valid</h1>
+            <p>This invite link has expired or was replaced. Ask the person who sent it for a new one.</p>
+            <a class="rb-btn" href="/communities">Browse communities</a>
+          </>
+        )
+      }
+    </div>
+  </main>
+</Page>

@@ -3,6 +3,7 @@ export const prerender = false;
 import Page from "../../../layouts/Page.astro";
 import RecipeForm from "../../../components/forms/RecipeForm";
 import { getRecipeBySlug, listFoods } from "../../../db/recipes";
+import { listPostingTargets } from "../../../db/communities";
 
 const user = Astro.locals.user;
 const { slug } = Astro.params;
@@ -13,6 +14,7 @@ const recipe = slug ? await getRecipeBySlug(slug, user.id) : null;
 if (!recipe || recipe.author?.id !== user.id) return new Response("Not found", { status: 404 });
 
 const foods = (await listFoods()).map((f) => f.name);
+const communities = await listPostingTargets(user.id);
 const initial = {
   name: recipe.name,
   description: recipe.description,
@@ -28,11 +30,14 @@ const initial = {
     unit: i.unit,
   })),
   steps: recipe.steps.map((s) => s.instruction),
+  communityId: recipe.community ? String(recipe.community.id) : "",
+  dishName: recipe.dish?.name ?? "",
+  visibility: recipe.visibility,
 };
 ---
 
 <Page title={`Edit ${recipe.name}`}>
   <main class="rf-wrap">
-    <RecipeForm foods={foods} initial={initial} editSlug={recipe.slug} userId={user.id} client:load />
+    <RecipeForm foods={foods} communities={communities} initial={initial} editSlug={recipe.slug} userId={user.id} client:load />
   </main>
 </Page>

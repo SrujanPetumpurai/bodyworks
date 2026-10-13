@@ -1,0 +1,123 @@
+/* Communities: browse, community page (recipe box), create + invite */
+
+/* ---------- shared bits ---------- */
+.cm-badge {
+  display: inline-block; font: 700 0.72rem var(--font-body); letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.25rem 0.6rem; border-radius: 6px; color: var(--sub); border: 1px solid var(--rule); white-space: nowrap;
+}
+.cm-badge-top { color: var(--on-cta); background: var(--cta); border-color: var(--cta); }
+.cm-badge-private { color: var(--warn); border-color: var(--warn); }
+.cm-meta { margin: 0.3rem 0 0; color: var(--sub); font-size: 0.95rem; }
+
+/* ---------- browse ---------- */
+.cm-section { margin-bottom: 2.8rem; }
+.cm-section h2 { font-size: 2rem; margin: 0 0 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--rule); }
+.cm-search { max-width: 420px; margin-bottom: 1.2rem; }
+.cm-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2rem; }
+.cm-card {
+  display: flex; flex-direction: column; gap: 0.5rem; padding: 1.1rem 1.2rem; text-decoration: none;
+  color: var(--ink) !important; background: var(--paper); border: 1px solid var(--edge); border-radius: 12px;
+  transition: transform 0.18s, border-color 0.18s, background 0.18s;
+}
+.cm-card:hover { transform: translateY(-3px); border-color: var(--cta); background: var(--raise); }
+.cm-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6rem; }
+.cm-card h3 { font-size: 1.7rem; margin: 0; line-height: 1.05; }
+.cm-card p {
+  margin: 0; color: var(--sub); font-size: 0.95rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.cm-card small { color: var(--sub); font-weight: 600; margin-top: auto; }
+
+.cm-create { max-width: 560px; margin-top: 1.4rem; }
+.cm-choice { border: 1px dashed var(--rule); border-radius: 10px; padding: 0.6rem 1rem 0.9rem; margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+.cm-choice legend { font: 800 1.2rem var(--font-head); text-transform: uppercase; padding: 0 0.4rem; }
+.cm-choice label { display: flex; gap: 0.7rem; align-items: flex-start; cursor: pointer; color: var(--sub); }
+.cm-choice label strong { display: block; color: var(--ink); }
+.cm-choice input { accent-color: var(--cta); margin-top: 0.3rem; }
+
+/* ---------- community header ---------- */
+.cm-head .cm-crumb { margin: 0 0 0.6rem; font-size: 0.9rem; }
+.cm-head .cm-crumb a { text-decoration: none; }
+.cm-title-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.cm-actions { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-top: 1.1rem; }
+.cm-invite { margin-top: 1.4rem; max-width: 640px; }
+.cm-invite-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.cm-invite-row input {
+  flex: 1 1 260px; min-width: 0; box-sizing: border-box; font: 500 0.95rem var(--font-body); color: var(--ink);
+  background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 0.55rem 0.8rem;
+}
+
+/* ---------- by dish / by cook toggle ---------- */
+.cm-toggle { display: inline-flex; padding: 3px; margin-bottom: 1.6rem; background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; }
+.cm-toggle button {
+  border: none; background: none; cursor: pointer; color: var(--sub); font: 700 0.95rem var(--font-body);
+  padding: 0.5rem 1.2rem; border-radius: 7px;
+}
+.cm-toggle button:hover { color: var(--ink); }
+.cm-toggle button.on { background: var(--cta); color: var(--on-cta); }
+
+/* ---------- the recipe box: divider tabs + drawer of cards ---------- */
+.cm-box { display: grid; grid-template-columns: 210px minmax(0, 1fr); align-items: start; }
+.cm-dividers { display: flex; flex-direction: column; gap: 4px; padding-top: 1rem; }
+.cm-dividers button {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; text-align: left; cursor: pointer;
+  font: 700 0.98rem var(--font-body); color: var(--sub); background: var(--bg);
+  border: 1px solid var(--edge); border-right: none; border-radius: 10px 0 0 10px; padding: 0.7rem 0.9rem;
+}
+.cm-dividers button:hover { color: var(--ink); background: var(--paper); }
+.cm-dividers button.on {
+  color: var(--ink); background: var(--paper); border-color: var(--rule); box-shadow: inset 3px 0 0 var(--cta);
+  position: relative; margin-right: -1px; /* tab merges into the drawer */
+}
+.cm-dividers small { color: var(--sub); font-weight: 700; }
+.cm-drawer { background: var(--paper); border: 1px solid var(--rule); border-radius: 0 12px 12px 12px; padding: 1.4rem 1.5rem 1.6rem; min-height: 260px; }
+.cm-drawer h2 { font-size: 2.6rem; margin: 0; line-height: 1; }
+.cm-versions { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; margin-top: 1.2rem; }
+
+.cm-version {
+  display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem 1.1rem; background: var(--bg);
+  border: 1px solid var(--edge); border-radius: 10px;
+}
+.cm-version header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+.cm-version h3 { font-size: 1.5rem; margin: 0; line-height: 1.05; }
+.cm-cook { display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--ink) !important; font-weight: 700; }
+.cm-cook:hover span { text-decoration: underline; }
+.cm-facts { display: grid; grid-template-columns: repeat(3, auto); justify-content: space-between; gap: 0.6rem; margin: 0.2rem 0; padding: 0.6rem 0; border-block: 1px dashed var(--rule); }
+.cm-facts div { display: flex; flex-direction: column; gap: 0.1rem; }
+.cm-facts dt { font: 600 0.7rem var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub); }
+.cm-facts dd { margin: 0; font-weight: 700; text-transform: capitalize; }
+.cm-facts .rb-stars { font-size: 0.95rem; }
+.cm-ings { margin: 0; color: var(--sub); font-size: 0.9rem; flex: 1; }
+
+/* ---------- by cook ---------- */
+.cm-cook-section { margin-bottom: 2.4rem; }
+.cm-cook-section h2 { display: flex; align-items: center; gap: 0.7rem; font-size: 2rem; margin: 0 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--rule); }
+.cm-cook-section h2 a { text-decoration: none; color: var(--ink); }
+.cm-cook-section h2 a:hover { text-decoration: underline; }
+.cm-cook-section h2 small { margin-left: auto; font: 600 0.9rem var(--font-body); color: var(--sub); text-transform: none; letter-spacing: 0; }
+
+/* ---------- recipe form: community + visibility ---------- */
+.rf-place { display: flex; flex-direction: column; gap: 0.8rem; }
+.rf-vis { border: 1px dashed var(--rule); border-radius: 10px; padding: 0.6rem 1rem 0.9rem; margin: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.rf-vis legend { font: 800 1.2rem var(--font-head); text-transform: uppercase; padding: 0 0.4rem; }
+.rf-vis label { display: flex; gap: 0.7rem; align-items: flex-start; cursor: pointer; color: var(--sub); }
+.rf-vis label strong { display: block; color: var(--ink); }
+.rf-vis label.off { opacity: 0.45; cursor: not-allowed; }
+.rf-vis input { accent-color: var(--cta); margin-top: 0.3rem; }
+
+@media (max-width: 860px) {
+  .cm-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .cm-cards { grid-template-columns: 1fr; }
+  /* dividers become a scrolling tab strip above the drawer */
+  .cm-box { grid-template-columns: 1fr; }
+  .cm-dividers { flex-direction: row; overflow-x: auto; padding-top: 0; gap: 4px; }
+  .cm-dividers button { border-right: 1px solid var(--edge); border-bottom: none; border-radius: 10px 10px 0 0; flex-shrink: 0; }
+  .cm-dividers button.on { box-shadow: inset 0 3px 0 var(--cta); margin-right: 0; }
+  .cm-drawer { border-radius: 0 0 12px 12px; padding: 1.1rem 1rem 1.3rem; }
+  .cm-drawer h2 { font-size: 2.1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cm-card, .cm-card:hover { transition: none; transform: none; }
+}

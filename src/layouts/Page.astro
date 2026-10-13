@@ -3,6 +3,7 @@ import AccountMenu from "../components/AccountMenu";
 import "../styles/recipes.css";
 import "../styles/forms.css";
 import "../styles/profile.css";
+import "../styles/communities.css";
 
 const { title, nav = true } = Astro.props;
 ---
@@ -27,6 +28,10 @@ const { title, nav = true } = Astro.props;
             <a href="/recipes" class="rb-logo">
               bodyworks
             </a>
+            <nav class="rb-nav" aria-label="Main">
+              <a href="/recipes">Recipes</a>
+              <a href="/communities">Communities</a>
+            </nav>
             <AccountMenu client:load />
           </header>
         )

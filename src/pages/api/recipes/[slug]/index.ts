@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { deleteRecipe, getRecipeBySlug, updateRecipe } from "../../../../db/recipes";
+import { resolveRecipePlacement } from "../../../../db/communities";
 import { json, parseRecipeInput } from "../../../../lib/recipe-input";
 
 export const prerender = false;
@@ -29,8 +30,11 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
   const parsed = parseRecipeInput(body);
   if (!parsed.ok) return json({ error: parsed.error }, 400);
 
+  const placed = await resolveRecipePlacement(locals.user.id, parsed.data);
+  if (!placed.ok) return json({ error: placed.error }, placed.status);
+
   try {
-    const ok = await updateRecipe(params.slug, locals.user.id, parsed.data);
+    const ok = await updateRecipe(params.slug, locals.user.id, parsed.data, placed.placement);
     if (!ok) return json({ error: "Recipe not found, or it isn't yours." }, 404);
     return json({ slug: params.slug });
   } catch (err) {

@@ -17,7 +17,13 @@ export type RecipeSummary = {
   avgRating: number;
   ratingCount: number;
   ingredientSlugs: string[];
+  ingredientNames: string[];
   createdAt: string;
+  visibility: "private" | "community" | "public";
+  prepTimeMinutes: number | null;
+  difficulty: "easy" | "medium" | "hard" | null;
+  dishId: number | null;
+  dishName: string | null;
 };
 
 const RATING_OPTIONS = [
@@ -104,6 +110,7 @@ export default function RecipesBrowser({ foods, recipes }: { foods: Food[]; reci
         <nav className="rb-nav" aria-label="Main">
           <a href="/daily-requirements">Daily needs</a>
           <a href="/recipes" aria-current="page">Recipes</a>
+          <a href="/communities">Communities</a>
         </nav>
         <AccountMenu />
       </header>

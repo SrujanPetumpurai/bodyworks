@@ -14,6 +14,26 @@ export type RecipeFormValues = {
   videoUrl: string;
   ingredients: { name: string; amount: string; unit: string }[];
   steps: string[];
+  communityId: string; // "" = standalone recipe
+  dishName: string;
+  visibility: Visibility;
+};
+
+type Visibility = "private" | "community" | "public";
+export type PostingTarget = { id: number; slug: string; name: string; visibility: "public" | "private"; dishes: string[] };
+
+// Mirrors resolveRecipePlacement on the server, which is what actually enforces it.
+//   standalone: private | public     private community: private | community     public community: all three
+function allowedVisibilities(target: PostingTarget | undefined): Visibility[] {
+  if (!target) return ["private", "public"];
+  return target.visibility === "private" ? ["private", "community"] : ["private", "community", "public"];
+}
+const defaultVisibility = (target: PostingTarget | undefined): Visibility => (target ? "community" : "public");
+
+const VIS_LABELS: Record<Visibility, [string, string]> = {
+  private: ["Only me", "A draft or personal copy. Nobody else can see it."],
+  community: ["Community members", "Everyone in the community can see it."],
+  public: ["Anyone", "Visible to everyone, and shown on the main recipes page."],
 };
 
 export const EMPTY_RECIPE: RecipeFormValues = {
@@ -27,15 +47,20 @@ export const EMPTY_RECIPE: RecipeFormValues = {
   videoUrl: "",
   ingredients: [{ name: "", amount: "", unit: "g" }],
   steps: [""],
+  communityId: "",
+  dishName: "",
+  visibility: "public",
 };
 
 export default function RecipeForm({
   foods,
+  communities = [],
   initial = EMPTY_RECIPE,
   editSlug,
   userId,
 }: {
   foods: string[];
+  communities?: PostingTarget[];
   initial?: RecipeFormValues;
   editSlug?: string;
   userId: string;
@@ -46,6 +71,16 @@ export default function RecipeForm({
 
   const set = <K extends keyof RecipeFormValues>(key: K, value: RecipeFormValues[K]) =>
     setV((s) => ({ ...s, [key]: value }));
+
+  const target = communities.find((c) => String(c.id) === v.communityId);
+  const allowed = allowedVisibilities(target);
+
+  function pickCommunity(id: string) {
+    const next = communities.find((c) => String(c.id) === id);
+    // keep the current choice if the new place still allows it, else fall back to the default
+    const visibility = allowedVisibilities(next).includes(v.visibility) ? v.visibility : defaultVisibility(next);
+    setV((s) => ({ ...s, communityId: id, dishName: id === s.communityId ? s.dishName : "", visibility }));
+  }
 
   const setIng = (i: number, patch: Partial<RecipeFormValues["ingredients"][number]>) =>
     set("ingredients", v.ingredients.map((x, j) => (j === i ? { ...x, ...patch } : x)));
@@ -68,7 +103,7 @@ export default function RecipeForm({
       setBusy(false);
       return setError(data?.error || "Couldn't save. Check your connection and try again.");
     }
-    location.href = `/profile/${userId}?tab=recipes`;
+    location.href = target ? `/communities/${target.slug}` : `/profile/${userId}?tab=recipes`;
   }
 
   return (
@@ -84,6 +119,64 @@ export default function RecipeForm({
         Description
         <textarea value={v.description} onChange={(e) => set("description", e.target.value)} required maxLength={1000} rows={3} />
       </label>
+
+      <fieldset className="rf-group rf-place">
+        <legend>Who can see it</legend>
+
+        {communities.length > 0 && (
+          <label className="af-field">
+            Post to
+            <select value={v.communityId} onChange={(e) => pickCommunity(e.target.value)}>
+              <option value="">My profile only (not in a community)</option>
+              {communities.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}{c.visibility === "private" ? " (private)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {target && (
+          <label className="af-field">
+            Dish (optional)
+            <input
+              list="rf-dishes"
+              value={v.dishName}
+              onChange={(e) => set("dishName", e.target.value)}
+              maxLength={60}
+              placeholder="e.g. Chicken Biryani — groups versions of the same dish"
+            />
+            <datalist id="rf-dishes">
+              {target.dishes.map((d) => <option key={d} value={d} />)}
+            </datalist>
+          </label>
+        )}
+
+        <div className="rf-vis" role="radiogroup" aria-label="Visibility">
+          {(["private", "community", "public"] as Visibility[])
+            .filter((o) => o !== "community" || target)
+            .map((o) => {
+              const ok = allowed.includes(o);
+              return (
+                <label key={o} className={ok ? "" : "off"}>
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value={o}
+                    checked={v.visibility === o}
+                    disabled={!ok}
+                    onChange={() => set("visibility", o)}
+                  />
+                  <span>
+                    <strong>{VIS_LABELS[o][0]}</strong>
+                    {ok ? VIS_LABELS[o][1] : "Not available: this community is private, so recipes in it can't be public."}
+                  </span>
+                </label>
+              );
+            })}
+        </div>
+      </fieldset>
 
       <ImageUpload label="Photo" value={v.imageUrl} onChange={(url) => set("imageUrl", url)} />
 

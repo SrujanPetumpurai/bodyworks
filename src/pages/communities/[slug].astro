@@ -1,0 +1,46 @@
+---
+export const prerender = false;
+import CommunityView from "../../components/communities/CommunityView";
+import { getCommunityForViewer } from "../../db/communities";
+import { listRecipes } from "../../db/recipes";
+import "../../styles/recipes.css";
+import "../../styles/forms.css";
+import "../../styles/communities.css";
+
+const user = Astro.locals.user;
+const { slug } = Astro.params;
+// null for missing AND for private communities the viewer isn't in
+const community = slug ? await getCommunityForViewer(slug, user?.id) : null;
+if (!community) return new Response("Community not found", { status: 404 });
+
+const recipes = await listRecipes({ communityId: community.id, viewerId: user?.id });
+
+const data = {
+  slug: community.slug,
+  name: community.name,
+  description: community.description,
+  visibility: community.visibility,
+  memberCount: community.memberCount,
+  isMember: community.isMember,
+  isOwner: community.isOwner,
+  inviteCode: community.inviteCode,
+  ownerName: community.owner?.name ?? null,
+};
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{community.name} — bodyworks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <CommunityView community={data} recipes={recipes} signedIn={!!user} client:load />
+  </body>
+</html>
