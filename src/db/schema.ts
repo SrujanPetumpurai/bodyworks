@@ -9,6 +9,7 @@ import {
   timestamp,
   pgEnum,
   uniqueIndex,
+  index,
   check,
 } from "drizzle-orm/pg-core";
 
@@ -233,31 +234,125 @@ export const nutrientRequirements = pgTable(
 );
 
 // =====================================================================
+// COMMUNITIES — groups that post recipes together (e.g. a family)
+// =====================================================================
+
+// public: anyone can view and join. private: hidden from browse/search,
+// only active members can see anything inside; join by invite or approval.
+export const communityVisibilityEnum = pgEnum("community_visibility", ["public", "private"]);
+
+export const communityRoleEnum = pgEnum("community_role", ["owner", "member"]);
+
+// 'pending' = asked to join a private community, waiting on the owner
+export const communityMemberStatusEnum = pgEnum("community_member_status", ["pending", "active"]);
+
+export const communities = pgTable(
+  "communities",
+  {
+    id: serial("id").primaryKey(),
+    slug: text("slug").notNull().unique(),
+    name: text("name").notNull(),
+    description: text("description"),
+    imageUrl: text("image_url"),
+    visibility: communityVisibilityEnum("visibility").notNull().default("public"),
+    // shareable invite link token; null = invites off
+    inviteCode: text("invite_code").unique(),
+    // the owner also gets a community_members row with role 'owner'
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("communities_visibility_idx").on(table.visibility)]
+);
+
+export const communityMembers = pgTable(
+  "community_members",
+  {
+    id: serial("id").primaryKey(),
+    communityId: integer("community_id")
+      .notNull()
+      .references(() => communities.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    role: communityRoleEnum("role").notNull().default("member"),
+    status: communityMemberStatusEnum("status").notNull().default("active"),
+    joinedAt: timestamp("joined_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("community_member_unique").on(table.communityId, table.userId),
+    index("community_members_user_idx").on(table.userId),
+  ]
+);
+
+// "Chicken Biryani", "Dal", "Pickles" — scoped to one community so private
+// groups never share (or leak) dish names. Recipes group under these.
+export const dishes = pgTable(
+  "dishes",
+  {
+    id: serial("id").primaryKey(),
+    communityId: integer("community_id")
+      .notNull()
+      .references(() => communities.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("dish_community_slug_unique").on(table.communityId, table.slug)]
+);
+
+// =====================================================================
 // RECIPES
 // =====================================================================
 
 export const recipeDifficultyEnum = pgEnum("recipe_difficulty", ["easy", "medium", "hard"]);
 
-export const recipes = pgTable("recipes", {
-  id: serial("id").primaryKey(),
-  slug: text("slug").notNull().unique(),
-  authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
-  name: text("name").notNull(),
-  description: text("description").notNull(),
-  imageUrl: text("image_url"),
-  videoUrl: text("video_url"), // e.g. a YouTube link
-  externalUrl: text("external_url"), // e.g. original source link
-  prepTimeMinutes: integer("prep_time_minutes"),
-  difficulty: recipeDifficultyEnum("difficulty"),
-  cuisine: text("cuisine"),
-  servings: integer("servings"),
-  // denormalized so sorting/displaying rating doesn't need a join+aggregate
-  // on every list request — recomputed in db/recipes.ts whenever a rating changes
-  avgRating: numeric("avg_rating", { precision: 3, scale: 2 }).notNull().default("0"),
-  ratingCount: integer("rating_count").notNull().default(0),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+// private: author only. community: active members of recipes.communityId.
+// public: anyone. (A private community caps its recipes at 'community' —
+// enforced in app code, since it depends on the community's visibility.)
+export const recipeVisibilityEnum = pgEnum("recipe_visibility", ["private", "community", "public"]);
+
+export const recipes = pgTable(
+  "recipes",
+  {
+    id: serial("id").primaryKey(),
+    slug: text("slug").notNull().unique(),
+    authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
+    // null = standalone recipe (only 'private' or 'public')
+    communityId: integer("community_id").references(() => communities.id, { onDelete: "cascade" }),
+    // optional grouping inside the community; a dish only ever belongs to one community
+    dishId: integer("dish_id").references(() => dishes.id, { onDelete: "set null" }),
+    // existing recipes are backfilled as 'public' via the default
+    visibility: recipeVisibilityEnum("visibility").notNull().default("public"),
+    name: text("name").notNull(),
+    description: text("description").notNull(),
+    imageUrl: text("image_url"),
+    videoUrl: text("video_url"), // e.g. a YouTube link
+    externalUrl: text("external_url"), // e.g. original source link
+    prepTimeMinutes: integer("prep_time_minutes"),
+    difficulty: recipeDifficultyEnum("difficulty"),
+    cuisine: text("cuisine"),
+    servings: integer("servings"),
+    // denormalized so sorting/displaying rating doesn't need a join+aggregate
+    // on every list request — recomputed in db/recipes.ts whenever a rating changes
+    avgRating: numeric("avg_rating", { precision: 3, scale: 2 }).notNull().default("0"),
+    ratingCount: integer("rating_count").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("recipes_community_idx").on(table.communityId),
+    index("recipes_dish_idx").on(table.dishId),
+    index("recipes_visibility_idx").on(table.visibility),
+    // a 'community' recipe with no community would be visible to nobody
+    check(
+      "community_visibility_needs_community",
+      sql`${table.visibility} <> 'community' OR ${table.communityId} IS NOT NULL`
+    ),
+  ]
+);
 
 export const recipeIngredients = pgTable("recipe_ingredients", {
   id: serial("id").primaryKey(),
@@ -361,10 +456,34 @@ export const foodsRelations = relations(foods, ({ many }) => ({
   recipeIngredients: many(recipeIngredients),
 }));
 
+// ---------- communities ----------
+
+export const communitiesRelations = relations(communities, ({ one, many }) => ({
+  owner: one(user, { fields: [communities.ownerId], references: [user.id] }),
+  members: many(communityMembers),
+  dishes: many(dishes),
+  recipes: many(recipes),
+}));
+
+export const communityMembersRelations = relations(communityMembers, ({ one }) => ({
+  community: one(communities, {
+    fields: [communityMembers.communityId],
+    references: [communities.id],
+  }),
+  user: one(user, { fields: [communityMembers.userId], references: [user.id] }),
+}));
+
+export const dishesRelations = relations(dishes, ({ one, many }) => ({
+  community: one(communities, { fields: [dishes.communityId], references: [communities.id] }),
+  recipes: many(recipes),
+}));
+
 // ---------- recipes ----------
 
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
   author: one(user, { fields: [recipes.authorId], references: [user.id] }),
+  community: one(communities, { fields: [recipes.communityId], references: [communities.id] }),
+  dish: one(dishes, { fields: [recipes.dishId], references: [dishes.id] }),
   ingredients: many(recipeIngredients),
   steps: many(recipeSteps),
   ratings: many(recipeRatings),
