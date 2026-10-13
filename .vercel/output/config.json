@@ -1,0 +1,108 @@
+{
+	"version": 3,
+	"routes": [
+		{
+			"src": "^/_astro(?:/(.*))$",
+			"headers": {
+				"cache-control": "public, max-age=31536000, immutable"
+			},
+			"continue": true
+		},
+		{
+			"handle": "filesystem"
+		},
+		{
+			"src": "^/_server-islands/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/_image/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/auth(?:/(.*?))?/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/communities/join/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/communities/([^/]+?)/invite/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/communities/([^/]+?)/join/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/communities/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/nutrients/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/profile/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/recipes/([^/]+?)/rate/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/recipes/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/recipes/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/upload/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/auth/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/communities/join/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/communities/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/communities/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/profile/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/recipes/new/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/recipes/([^/]+?)/edit/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/recipes/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/404/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/.*$",
+			"dest": "_render",
+			"status": 404
+		}
+	]
+}

@@ -1,5 +1,7 @@
 import { DIFFICULTIES, UNITS, type RecipeInput } from "../db/recipes";
 
+const VISIBILITIES = ["private", "community", "public"];
+
 type Result = { ok: true; data: RecipeInput } | { ok: false; error: string };
 
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
@@ -63,9 +65,17 @@ export function parseRecipeInput(body: any): Result {
   if (steps.length === 0) return { ok: false, error: "Add at least one step." };
   if (steps.length > 40) return { ok: false, error: "Too many steps (max 40)." };
 
+  const visibility = body?.visibility ?? "public";
+  if (!VISIBILITIES.includes(visibility)) return { ok: false, error: "Pick private, community or public." };
+  const communityId = optionalInt(body?.communityId, 2_000_000_000);
+  if (communityId === "invalid") return { ok: false, error: "That community isn't valid." };
+
   return {
     ok: true,
     data: {
+      communityId,
+      dishName: str(body?.dishName, 60) || null,
+      visibility,
       name,
       description,
       imageUrl,

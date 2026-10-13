@@ -3,15 +3,25 @@ export const prerender = false;
 import Page from "../../layouts/Page.astro";
 import RecipeForm from "../../components/forms/RecipeForm";
 import { listFoods } from "../../db/recipes";
+import { listPostingTargets } from "../../db/communities";
+import { EMPTY_RECIPE } from "../../components/forms/RecipeForm";
 
 const user = Astro.locals.user;
 if (!user) return Astro.redirect("/auth?next=/recipes/new");
 
 const foods = (await listFoods()).map((f) => f.name);
+const communities = await listPostingTargets(user.id);
+
+// /recipes/new?community=<slug> comes from the "Add a recipe" button on a community page
+const wanted = Astro.url.searchParams.get("community");
+const preset = communities.find((c) => c.slug === wanted);
+const initial = preset
+  ? { ...EMPTY_RECIPE, communityId: String(preset.id), visibility: "community" as const }
+  : EMPTY_RECIPE;
 ---
 
 <Page title="Add recipe">
   <main class="rf-wrap">
-    <RecipeForm foods={foods} userId={user.id} client:load />
+    <RecipeForm foods={foods} communities={communities} initial={initial} userId={user.id} client:load />
   </main>
 </Page>
