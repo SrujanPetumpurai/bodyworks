@@ -1,0 +1,195 @@
+/* Workout planner — the recipes "Dark Athletic" theme with the lime accent swapped for red.
+   Surfaces, type and spacing all come from recipes.css (.rb-page); this file only re-points
+   the accent variables and styles the calendar. */
+
+.rb-page.wk-page {
+  --cta: #ff4a3d;
+  --cta-hover: #ff6b5e;
+  --on-cta: #0f1210;
+  --star: #ff4a3d;
+}
+.rb-page.wk-page a { color: var(--cta); }
+.rb-page.wk-page .rb-wordmark { color: var(--cta) !important; }
+
+/* four reds, told apart by shade AND icon (never colour alone) */
+.wk-cat--exercise     { --c: #ff4a3d; --c-ink: #0f1210; }
+.wk-cat--martial_arts { --c: #b3261e; --c-ink: #ffffff; }
+.wk-cat--cardio       { --c: #ff9a8c; --c-ink: #0f1210; }
+.wk-cat--mobility     { --c: #4a1f1c; --c-ink: #ffb3a8; --c-edge: #ff6b5e; }
+
+/* ---------- layout ---------- */
+.wk-container { max-width: 1180px; margin: 0 auto; padding: 2.4rem 2rem 5rem; box-sizing: border-box; }
+.wk-title { margin-bottom: 0; }
+.wk-body { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 2.2rem; align-items: start; }
+
+.wk-banner {
+  margin: 0 0 1.2rem; padding: 0.7rem 1rem; border: 1px solid var(--rule); border-left: 4px solid var(--cta);
+  border-radius: 8px; background: var(--paper); font-weight: 600; font-size: 0.95rem;
+}
+.wk-banner--error { border-left-color: var(--warn); color: var(--warn); }
+
+/* ---------- tray ---------- */
+.wk-tray { position: sticky; top: 1rem; }
+.wk-tray h2 { font-size: 1.5rem; margin: 0 0 0.6rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--rule); }
+.wk-tray-hint { margin: 0 0 0.9rem; font-size: 0.85rem; color: var(--sub); }
+.wk-tray-items { display: grid; gap: 0.6rem; }
+
+.wk-tile {
+  display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.9rem; cursor: grab; user-select: none;
+  background: var(--c); color: var(--c-ink); border: 1px solid var(--c-edge, transparent); border-radius: 10px;
+  font: 700 0.95rem var(--font-body); transition: transform 0.15s, filter 0.15s;
+}
+.wk-tile:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.wk-tile:active { cursor: grabbing; }
+.wk-tile.armed { outline: 3px solid var(--ink); outline-offset: 2px; }
+.wk-armed-note { margin: 0.9rem 0 0; font-size: 0.85rem; color: var(--sub); }
+.wk-armed-note b { color: var(--ink); }
+
+/* ---------- calendar card ---------- */
+.wk-card { background: var(--paper); border: 1px solid var(--edge); border-radius: 12px; padding: 1.1rem 1.2rem 1.3rem; min-width: 0; }
+
+.wk-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem 1.2rem;
+  padding-bottom: 0.9rem; margin-bottom: 1rem; border-bottom: 1px solid var(--rule);
+}
+.wk-tabs { display: inline-flex; background: var(--bg); border: 1px solid var(--rule); border-radius: 999px; padding: 3px; }
+.wk-tabs button {
+  border: none; background: none; color: var(--sub); cursor: pointer; border-radius: 999px;
+  font: 700 0.85rem var(--font-body); padding: 0.4rem 1rem;
+}
+.wk-tabs button:hover { color: var(--ink); }
+.wk-tabs button.on { background: var(--cta); color: var(--on-cta); }
+
+.wk-nav { display: flex; gap: 0.35rem; }
+.wk-nav button {
+  border: 1px solid var(--rule); background: var(--raise); color: var(--ink); cursor: pointer; border-radius: 8px;
+  font: 700 1.05rem/1 var(--font-body); height: 34px; min-width: 34px; padding: 0 0.7rem;
+}
+.wk-nav .wk-today { font-size: 0.85rem; }
+.wk-nav button:hover { background: var(--rule); }
+.wk-range { font-size: 2rem; line-height: 1; margin: 0 0 0 auto; }
+
+/* ---------- month ---------- */
+.wk-dow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-bottom: 6px; }
+.wk-dow span { text-align: center; font-weight: 600; font-size: 0.75rem; color: var(--sub); text-transform: uppercase; letter-spacing: 0.08em; }
+.wk-month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+
+.wk-cell {
+  min-height: 108px; padding: 0.35rem 0.4rem; box-sizing: border-box; cursor: pointer; min-width: 0;
+  background: var(--bg); border: 1px solid var(--edge); border-radius: 8px;
+  display: flex; flex-direction: column; gap: 0.25rem; transition: background 0.12s, border-color 0.12s;
+}
+.wk-cell:hover { border-color: var(--rule); background: var(--raise); }
+.wk-cell.out { opacity: 0.4; }
+.wk-cell.over { border: 1px dashed var(--cta); background: color-mix(in srgb, var(--cta) 14%, var(--bg)); }
+.wk-cell.armed { cursor: copy; }
+.wk-cell-num { align-self: flex-end; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; font: 600 0.82rem var(--font-body); color: var(--sub); }
+.wk-cell.today .wk-cell-num { background: var(--cta); color: var(--on-cta); font-weight: 700; }
+.wk-cell-chips { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.wk-more { font-size: 0.72rem; font-weight: 700; color: var(--cta); }
+
+.wk-chip {
+  display: flex; align-items: center; gap: 0.3rem; min-width: 0; cursor: grab;
+  background: var(--c); color: var(--c-ink); border: 1px solid var(--c-edge, transparent); border-radius: 999px;
+  padding: 0.14rem 0.5rem; font: 600 0.74rem var(--font-body);
+}
+.wk-chip svg { flex-shrink: 0; }
+.wk-chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wk-chip:hover { filter: brightness(1.1); }
+
+/* ---------- year ---------- */
+.wk-year { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.4rem 1.2rem; }
+.wk-mini-title {
+  border: none; background: none; cursor: pointer; padding: 0; margin-bottom: 0.35rem; text-align: left;
+  font: 800 1.35rem var(--font-head); text-transform: uppercase; color: var(--ink);
+}
+.wk-mini-title:hover { color: var(--cta); }
+.wk-mini-dow, .wk-mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.wk-mini-dow span { text-align: center; font-size: 0.66rem; font-weight: 600; color: var(--sub); }
+.wk-mini-day {
+  position: relative; aspect-ratio: 1; padding: 0; cursor: pointer; border: 1px solid transparent; border-radius: 6px;
+  background: none; color: var(--ink); font: 600 0.74rem var(--font-body);
+}
+.wk-mini-day:hover { background: var(--raise); }
+.wk-mini-day.has { background: color-mix(in srgb, var(--cta) 16%, var(--paper)); font-weight: 700; }
+.wk-mini-day.today { background: var(--cta); color: var(--on-cta); }
+.wk-mini-day.over { border: 1px dashed var(--cta); background: color-mix(in srgb, var(--cta) 28%, var(--paper)); }
+.wk-dots { position: absolute; left: 0; right: 0; bottom: 2px; display: flex; justify-content: center; gap: 2px; }
+.wk-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35); }
+.wk-mini-day.today .wk-dots i { box-shadow: 0 0 0 1px rgba(15, 18, 16, 0.5); }
+
+/* ---------- day ---------- */
+.wk-untimed {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; min-height: 48px; box-sizing: border-box;
+  padding: 0.5rem 0.8rem; margin-bottom: 0.8rem; border: 1px dashed var(--rule); border-radius: 8px; background: var(--bg);
+}
+.wk-untimed.over { border-color: var(--cta); background: color-mix(in srgb, var(--cta) 14%, var(--bg)); }
+.wk-untimed-label { font: 800 1rem var(--font-head); text-transform: uppercase; letter-spacing: 0.04em; margin-right: 0.4rem; }
+.wk-untimed .wk-chip { font-size: 0.8rem; padding: 0.25rem 0.7rem; }
+.wk-hint { color: var(--sub); font-size: 0.85rem; }
+
+.wk-day-scroll { max-height: 640px; overflow-y: auto; border: 1px solid var(--edge); border-radius: 8px; background: var(--bg); }
+.wk-day-grid { position: relative; }
+.wk-day-grid.over { background: color-mix(in srgb, var(--cta) 8%, var(--bg)); }
+.wk-hour { position: absolute; left: 0; right: 0; box-sizing: border-box; border-top: 1px solid var(--edge); }
+.wk-hour span { position: absolute; top: -0.6em; left: 8px; width: 56px; font-size: 0.72rem; font-weight: 600; color: var(--sub); background: var(--bg); }
+.wk-hour:first-child span { top: 4px; }
+.wk-hour::after { content: ""; position: absolute; left: 72px; right: 0; top: 50%; border-top: 1px dotted var(--edge); }
+
+.wk-block {
+  position: absolute; box-sizing: border-box; overflow: hidden; z-index: 1; cursor: grab;
+  display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.3rem 0.55rem;
+  background: var(--c); color: var(--c-ink); border: 1px solid var(--c-edge, rgba(0, 0, 0, 0.35)); border-radius: 8px;
+  font-size: 0.82rem; line-height: 1.2;
+}
+.wk-block svg { flex-shrink: 0; margin-top: 1px; }
+.wk-block strong { display: block; }
+.wk-block small { display: block; opacity: 0.85; font-size: 0.72rem; }
+.wk-now { position: absolute; left: 64px; right: 0; z-index: 2; height: 0; border-top: 2px solid var(--ink); pointer-events: none; }
+.wk-now::before { content: ""; position: absolute; left: -5px; top: -6px; width: 10px; height: 10px; border-radius: 50%; background: var(--ink); }
+
+/* ---------- modal ---------- */
+.wk-overlay { position: fixed; inset: 0; z-index: 100; padding: 1.5rem; background: rgba(5, 7, 6, 0.78); display: flex; align-items: center; justify-content: center; }
+.wk-modal {
+  position: relative; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; box-sizing: border-box;
+  background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; padding: 1.4rem 1.6rem 1.2rem;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.8);
+}
+.wk-modal-close { position: absolute; top: 0.6rem; right: 0.8rem; width: 36px; height: 36px; border: none; background: none; font-size: 1.7rem; color: var(--sub); cursor: pointer; border-radius: 8px; }
+.wk-modal-close:hover { color: var(--ink); background: var(--raise); }
+.wk-modal-head { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 1.1rem; }
+.wk-modal-head h2 { font-size: 2.1rem; line-height: 1; margin: 0; }
+.wk-modal-icon { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--c); color: var(--c-ink); border: 1px solid var(--c-edge, transparent); }
+
+.wk-field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.85rem; flex: 1; min-width: 0; }
+.wk-field span { font-size: 0.75rem; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: 0.08em; }
+.wk-field input, .wk-field select, .wk-field textarea {
+  width: 100%; box-sizing: border-box; resize: vertical; color-scheme: dark;
+  background: var(--bg); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px;
+  font: 500 0.95rem var(--font-body); padding: 0.5rem 0.65rem;
+}
+.wk-field input:focus, .wk-field select:focus, .wk-field textarea:focus { outline: 3px solid var(--cta); outline-offset: 1px; }
+.wk-row { display: flex; gap: 0.6rem; }
+.wk-modal-actions { display: flex; justify-content: space-between; margin-top: 0.5rem; }
+.wk-modal-actions button { font: 700 0.9rem var(--font-body); padding: 0.55rem 1.3rem; border-radius: 999px; border: 1px solid var(--rule); cursor: pointer; }
+.wk-delete { background: none; color: var(--warn); }
+.wk-delete:hover { background: var(--raise); }
+.wk-done { background: var(--cta); color: var(--on-cta); border-color: var(--cta) !important; }
+.wk-done:hover { background: var(--cta-hover); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 960px) { .wk-year { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .wk-container { padding: 1.6rem 1rem 4rem; }
+  .wk-body { grid-template-columns: 1fr; }
+  .wk-tray { position: static; }
+  .wk-tray-items { grid-template-columns: repeat(2, 1fr); }
+  .wk-range { margin-left: 0; width: 100%; font-size: 1.7rem; }
+  .wk-year { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wk-cell { min-height: 74px; padding: 0.25rem; }
+  .wk-chip-text { display: none; }
+  .wk-chip { padding: 0.2rem 0.35rem; }
+  .wk-cell-chips { flex-direction: row; flex-wrap: wrap; }
+  .wk-row { flex-direction: column; gap: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .wk-tile, .wk-cell { transition: none; } .wk-tile:hover { transform: none; } }

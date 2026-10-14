@@ -7,6 +7,7 @@ import {
   numeric,
   boolean,
   timestamp,
+  date,
   pgEnum,
   uniqueIndex,
   index,
@@ -393,6 +394,47 @@ export const recipeRatings = pgTable(
   (table) => [
     uniqueIndex("recipe_rating_unique").on(table.recipeId, table.userId),
     check("stars_range", sql`${table.stars} >= 1 AND ${table.stars} <= 5`),
+  ]
+);
+
+// =====================================================================
+// WORKOUT PLANNER — per-user calendar entries
+// =====================================================================
+
+export const workoutCategoryEnum = pgEnum("workout_category", [
+  "exercise",
+  "martial_arts",
+  "cardio",
+  "mobility",
+]);
+
+export const workoutEntries = pgTable(
+  "workout_entries",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    // plain "YYYY-MM-DD" string — a calendar day, no timezone shifting
+    date: date("date", { mode: "string" }).notNull(),
+    category: workoutCategoryEnum("category").notNull(),
+    title: text("title"),
+    notes: text("notes"),
+    // minutes from midnight (0–1439); null = planned for the day with no set time
+    startMinutes: integer("start_minutes"),
+    durationMinutes: integer("duration_minutes").notNull().default(60),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("workout_entries_user_date_idx").on(table.userId, table.date),
+    check(
+      "workout_start_minutes_range",
+      sql`${table.startMinutes} IS NULL OR (${table.startMinutes} >= 0 AND ${table.startMinutes} < 1440)`
+    ),
+    check(
+      "workout_duration_range",
+      sql`${table.durationMinutes} >= 5 AND ${table.durationMinutes} <= 720`
+    ),
   ]
 );
 
