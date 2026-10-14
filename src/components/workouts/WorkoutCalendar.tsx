@@ -15,6 +15,7 @@ type Entry = {
   notes: string | null;
   startMinutes: number | null;
   durationMinutes: number;
+  completed: boolean;
 };
 
 type NewEntry = Omit<Entry, "id">;
@@ -40,6 +41,11 @@ function Svg({ size = 22, children }: { size?: number; children: ReactNode }) {
   );
 }
 
+const CheckIcon = ({ size }: { size?: number }) => (
+  <Svg size={size}>
+    <path d="M5 12.5l4.5 4.5L19 7" strokeWidth="3" />
+  </Svg>
+);
 const ExerciseIcon = ({ size }: { size?: number }) => (
   <Svg size={size}>
     <path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11" />
@@ -135,9 +141,12 @@ function layoutDay(list: Entry[]) {
 
 export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
 
-  const todayKey = keyOf(new Date());
+  // "today" is only known in the browser: the server runs in UTC, so computing it during
+  // server render would be a day off for part of the day and break hydration.
+  const [todayKey, setTodayKey] = useState("");
+  const [cursor, setCursor] = useState("");
+  const ready = cursor !== "";
   const [view, setView] = useState<View>("month");
-  const [cursor, setCursor] = useState(todayKey);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [armed, setArmed] = useState<Category | null>(null); // tap-to-place (touch fallback)
@@ -148,11 +157,18 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
   const dayScrollRef = useRef<HTMLDivElement>(null);
   const dayGridRef = useRef<HTMLDivElement>(null);
 
-  const cursorDate = fromKey(cursor);
+  const cursorDate = ready ? fromKey(cursor) : new Date(2000, 0, 1);
   const cursorYear = cursorDate.getFullYear();
 
   /* ----- load a window around the cursor's year ----- */
   useEffect(() => {
+    const k = keyOf(new Date());
+    setTodayKey(k);
+    setCursor(k);
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
     if (!signedIn) {
       setEntries([]);
       return;
@@ -165,7 +181,7 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
     return () => {
       cancelled = true;
     };
-  }, [signedIn, cursorYear]);
+  }, [signedIn, cursorYear, ready]);
 
   const byDate = useMemo(() => {
     const map = new Map<string, Entry[]>();
@@ -230,10 +246,12 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
     }
   }
 
+  const toggleDone = (e: Entry) => patch(e.id, { completed: !e.completed });
+
   /* ----- placing things ----- */
   function place(category: Category, date: string, startMinutes: number | null) {
     if (!signedIn) return setError("Sign in to plan workouts.");
-    create({ date, category, title: null, notes: null, startMinutes, durationMinutes: 60 });
+    create({ date, category, title: null, notes: null, startMinutes, durationMinutes: 60, completed: false });
   }
 
   // startMinutes: undefined = keep existing time, null = clear it, number = set it
@@ -330,26 +348,41 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
 
   /* ---------- renderers ---------- */
 
-  const chip = (e: Entry, compact = false) => {
+  const checkButton = (e: Entry) => (
+    <button
+      type="button"
+      className="wk-check"
+      aria-pressed={e.completed}
+      aria-label={e.completed ? "Mark as not done" : "Mark as done"}
+      title={e.completed ? "Done — click to undo" : "Mark as done"}
+      onClick={(ev) => {
+        ev.stopPropagation();
+        toggleDone(e);
+      }}
+    >
+      <CheckIcon size={11} />
+    </button>
+  );
+
+  const chip = (e: Entry) => {
     const { Icon, label } = CAT[e.category];
     return (
       <div
         key={e.id}
-        className={`wk-chip wk-cat--${e.category}`}
+        className={`wk-chip wk-cat--${e.category} ${e.completed ? "done" : ""}`}
         {...entryDragProps(e)}
         onClick={(ev) => {
           ev.stopPropagation();
           setSelectedId(e.id);
         }}
-        title={`${e.title ?? label}${e.startMinutes != null ? ` · ${fmtTime(e.startMinutes)}` : ""}`}
+        title={`${e.title ?? label}${e.startMinutes != null ? ` · ${fmtTime(e.startMinutes)}` : ""}${e.completed ? " · done" : ""}`}
       >
         <Icon size={14} />
-        {!compact && (
-          <span className="wk-chip-text">
-            {e.startMinutes != null && <b>{fmtTime(e.startMinutes)} </b>}
-            {e.title ?? label}
-          </span>
-        )}
+        <span className="wk-chip-text">
+          {e.startMinutes != null && <b>{fmtTime(e.startMinutes)} </b>}
+          {e.title ?? label}
+        </span>
+        {checkButton(e)}
       </div>
     );
   };
@@ -366,14 +399,24 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
         <div className="wk-month-grid">
           {cells.map((c) => {
             const list = byDate.get(c.key) ?? [];
+            const allDone = list.length > 0 && list.every((e) => e.completed);
             return (
               <div
                 key={c.key}
-                className={`wk-cell ${c.inMonth ? "" : "out"} ${c.key === todayKey ? "today" : ""} ${overKey === c.key ? "over" : ""} ${armed ? "armed" : ""}`}
+                className={`wk-cell ${c.inMonth ? "" : "out"} ${c.key === todayKey ? "today" : ""} ${c.key < todayKey ? "past" : ""} ${overKey === c.key ? "over" : ""} ${armed ? "armed" : ""}`}
                 onClick={() => onCellClick(c.key)}
+                aria-current={c.key === todayKey ? "date" : undefined}
                 {...dropProps(c.key, c.key)}
               >
-                <span className="wk-cell-num">{c.day}</span>
+                <div className="wk-cell-head">
+                  {allDone && (
+                    <span className="wk-cell-ok" title="All done" aria-label="All workouts done">
+                      <CheckIcon size={11} />
+                    </span>
+                  )}
+                  {c.key === todayKey && <span className="wk-cell-tag">Today</span>}
+                  <span className="wk-cell-num">{c.day}</span>
+                </div>
                 <div className="wk-cell-chips">
                   {list.slice(0, 3).map((e) => chip(e))}
                   {list.length > 3 && <span className="wk-more">+{list.length - 3} more</span>}
@@ -411,13 +454,14 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
                 if (!c.inMonth) return <span key={c.key} />;
                 const list = byDate.get(c.key) ?? [];
                 const cats = [...new Set(list.map((e) => e.category))];
+                const allDone = list.length > 0 && list.every((e) => e.completed);
                 return (
                   <button
                     type="button"
                     key={c.key}
-                    className={`wk-mini-day ${c.key === todayKey ? "today" : ""} ${overKey === c.key ? "over" : ""} ${list.length ? "has" : ""}`}
+                    className={`wk-mini-day ${c.key === todayKey ? "today" : ""} ${c.key < todayKey ? "past" : ""} ${overKey === c.key ? "over" : ""} ${list.length ? "has" : ""} ${allDone ? "alldone" : ""}`}
                     onClick={() => onCellClick(c.key)}
-                    title={list.length ? `${list.length} planned` : undefined}
+                    title={list.length ? `${list.length} planned${allDone ? " · all done" : ""}` : undefined}
                     {...dropProps(c.key, c.key)}
                   >
                     {c.day}
@@ -452,7 +496,7 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
     };
 
     return (
-      <div className="wk-day">
+      <div className={`wk-day ${cursor < todayKey ? "past" : ""}`}>
         <div
           className={`wk-untimed ${overKey === "untimed" ? "over" : ""}`}
           {...dropProps("untimed", cursor, null)}
@@ -496,7 +540,7 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
               return (
                 <div
                   key={e.id}
-                  className={`wk-block wk-cat--${e.category}`}
+                  className={`wk-block wk-cat--${e.category} ${e.completed ? "done" : ""}`}
                   style={{
                     top: (e.startMinutes! / 60) * HOUR_H,
                     height: Math.max((e.durationMinutes / 60) * HOUR_H - 2, 26),
@@ -510,12 +554,13 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
                   }}
                 >
                   <Icon size={16} />
-                  <div>
+                  <div className="wk-block-text">
                     <strong>{e.title ?? label}</strong>
                     <small>
                       {fmtTime(e.startMinutes!)} – {fmtTime((e.startMinutes! + e.durationMinutes) % 1440)}
                     </small>
                   </div>
+                  {checkButton(e)}
                 </div>
               );
             })}
@@ -552,48 +597,13 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
           </p>
         )}
         {error && <p className="wk-banner wk-banner--error" role="alert">{error}</p>}
+        {armed && (
+          <p className="wk-banner" role="status">
+            Placing <b>{CAT[armed].label}</b> — tap a date. Tap the icon again, or press Esc, to cancel.
+          </p>
+        )}
 
         <div className="wk-body">
-          <aside className="wk-tray">
-            <h2>Workouts</h2>
-            <p className="wk-tray-hint">Drag onto a date, or tap one and then tap a date.</p>
-            <div className="wk-tray-items">
-              {CATEGORIES.map(({ key, label, Icon }) => (
-                <div
-                  key={key}
-                  role="button"
-                  tabIndex={0}
-                  aria-pressed={armed === key}
-                  className={`wk-tile wk-cat--${key} ${armed === key ? "armed" : ""}`}
-                  draggable
-                  onDragStart={(e) => {
-                    dragRef.current = { kind: "new", category: key };
-                    e.dataTransfer.effectAllowed = "copy";
-                    e.dataTransfer.setData("text/plain", key);
-                  }}
-                  onDragEnd={() => {
-                    dragRef.current = null;
-                    setOverKey(null);
-                  }}
-                  onClick={() => setArmed((a) => (a === key ? null : key))}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setArmed((a) => (a === key ? null : key));
-                    }
-                  }}
-                >
-                  <Icon size={26} />
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
-            {armed && (
-              <p className="wk-armed-note">
-                Placing <b>{CAT[armed].label}</b> — tap a date. Tap the icon again to cancel.
-              </p>
-            )}
-          </aside>
 
           <section className="wk-card">
             <div className="wk-toolbar">
@@ -616,13 +626,53 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
                 <button type="button" className="wk-today" onClick={() => setCursor(todayKey)}>Today</button>
                 <button type="button" onClick={() => shift(1)} aria-label="Next">›</button>
               </div>
-              <h2 className="wk-range">{title}</h2>
+              <h2 className="wk-range">
+                {ready ? title : ""}
+                {view === "day" && cursor === todayKey && <span className="wk-badge today">Today</span>}
+                {view === "day" && cursor < todayKey && <span className="wk-badge past">Past day</span>}
+              </h2>
             </div>
 
-            {view === "year" && renderYear()}
-            {view === "month" && renderMonth()}
-            {view === "day" && renderDay()}
+            {ready && view === "year" && renderYear()}
+            {ready && view === "month" && renderMonth()}
+            {ready && view === "day" && renderDay()}
+            {!ready && <div className="wk-loading" aria-hidden="true" />}
           </section>
+          <aside className="wk-tray" aria-label="Workout icons — drag onto a date">
+            <span className="wk-tray-cap">Drag</span>
+            <div className="wk-tray-items">
+              {CATEGORIES.map(({ key, label, Icon }) => (
+                <div
+                  key={key}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={armed === key}
+                  aria-label={label}
+                  data-label={label}
+                  className={`wk-tile wk-cat--${key} ${armed === key ? "armed" : ""}`}
+                  draggable
+                  onDragStart={(e) => {
+                    dragRef.current = { kind: "new", category: key };
+                    e.dataTransfer.effectAllowed = "copy";
+                    e.dataTransfer.setData("text/plain", key);
+                  }}
+                  onDragEnd={() => {
+                    dragRef.current = null;
+                    setOverKey(null);
+                  }}
+                  onClick={() => setArmed((a) => (a === key ? null : key))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setArmed((a) => (a === key ? null : key));
+                    }
+                  }}
+                >
+                  <Icon size={26} />
+                </div>
+              ))}
+            </div>
+          </aside>
         </div>
       </div>
 
@@ -680,6 +730,16 @@ function EntryModal({
           <span className="wk-modal-icon"><Icon size={22} /></span>
           <h2>{label}</h2>
         </div>
+
+        <button
+          type="button"
+          className={`wk-complete ${entry.completed ? "on" : ""}`}
+          aria-pressed={entry.completed}
+          onClick={() => onPatch({ completed: !entry.completed })}
+        >
+          <CheckIcon size={16} />
+          {entry.completed ? "Completed — tap to undo" : "Mark as done"}
+        </button>
 
         <label className="wk-field">
           <span>Title</span>
@@ -743,7 +803,7 @@ function EntryModal({
 
         <div className="wk-modal-actions">
           <button type="button" className="wk-delete" onClick={onDelete}>Delete</button>
-          <button type="button" className="wk-done" onClick={onClose}>Done</button>
+          <button type="button" className="wk-done" onClick={onClose}>Close</button>
         </div>
       </div>
     </div>

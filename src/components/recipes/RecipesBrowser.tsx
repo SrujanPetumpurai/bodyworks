@@ -108,6 +108,7 @@ export default function RecipesBrowser({ foods, recipes }: { foods: Food[]; reci
       <header className="rb-topbar">
         <a href="/" className="rb-wordmark">bodyworks</a>
         <nav className="rb-nav" aria-label="Main">
+          <a href="/workouts">Workouts</a>
           <a href="/daily-requirements">Daily needs</a>
           <a href="/recipes" aria-current="page">Recipes</a>
           <a href="/communities">Communities</a>

@@ -11,6 +11,7 @@ export type WorkoutEntryInput = {
   notes: string | null;
   startMinutes: number | null; // minutes from midnight, null = no set time
   durationMinutes: number;
+  completed: boolean;
 };
 
 type Parsed = { ok: true; value: Partial<WorkoutEntryInput> } | { ok: false; error: string };
@@ -55,6 +56,10 @@ export function parseEntryInput(body: any, partial: boolean): Parsed {
     if (!Number.isInteger(d) || d < 5 || d > 720) return fail("durationMinutes must be 5-720");
     v.durationMinutes = d;
   }
+  if ("completed" in body) {
+    if (typeof body.completed !== "boolean") return fail("completed must be true or false");
+    v.completed = body.completed;
+  }
   return { ok: true, value: v };
 }
 
@@ -66,6 +71,7 @@ const columns = {
   notes: workoutEntries.notes,
   startMinutes: workoutEntries.startMinutes,
   durationMinutes: workoutEntries.durationMinutes,
+  completed: workoutEntries.completed,
 };
 
 export async function listWorkouts(userId: string, from: string, to: string) {

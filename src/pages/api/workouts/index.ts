@@ -33,6 +33,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     notes: v.notes ?? null,
     startMinutes: v.startMinutes ?? null,
     durationMinutes: v.durationMinutes ?? 60,
+    completed: v.completed ?? false,
   };
   return json(await createWorkout(user.id, entry), 201);
 };

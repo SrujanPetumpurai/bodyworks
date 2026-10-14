@@ -423,6 +423,8 @@ export const workoutEntries = pgTable(
     // minutes from midnight (0–1439); null = planned for the day with no set time
     startMinutes: integer("start_minutes"),
     durationMinutes: integer("duration_minutes").notNull().default(60),
+    // ticked off once the workout has been done
+    completed: boolean("completed").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [

@@ -146,6 +146,7 @@ export default function CommunityView({
       <header className="rb-topbar">
         <a href="/" className="rb-wordmark">bodyworks</a>
         <nav className="rb-nav" aria-label="Main">
+          <a href="/workouts">Workouts</a>
           <a href="/daily-requirements">Daily needs</a>
           <a href="/recipes">Recipes</a>
           <a href="/communities" aria-current="page">Communities</a>
