@@ -14,15 +14,17 @@
 .rb-page.wk-page .rb-wordmark { color: var(--cta) !important; }
 
 /* four reds, told apart by shade AND icon (never colour alone) */
-.wk-cat--exercise     { --c: #ff4a3d; --c-ink: #0f1210; }
-.wk-cat--martial_arts { --c: #b3261e; --c-ink: #ffffff; }
-.wk-cat--cardio       { --c: #ff9a8c; --c-ink: #0f1210; }
-.wk-cat--mobility     { --c: #4a1f1c; --c-ink: #ffb3a8; --c-edge: #ff6b5e; }
+.wk-shade--ember   { --c: #ff4a3d; --c-ink: #0f1210; }
+.wk-shade--crimson { --c: #b3261e; --c-ink: #ffffff; }
+.wk-shade--blush   { --c: #ff9a8c; --c-ink: #0f1210; }
+.wk-shade--wine    { --c: #4a1f1c; --c-ink: #ffb3a8; --c-edge: #ff6b5e; }
+.wk-shade--scarlet { --c: #e11d2e; --c-ink: #ffffff; }
+.wk-shade--rose    { --c: #f4728a; --c-ink: #0f1210; }
 
 /* ---------- layout ---------- */
 .wk-container { max-width: 1180px; margin: 0 auto; padding: 2.4rem 2rem 5rem; box-sizing: border-box; }
 .wk-title { margin-bottom: 0; }
-.wk-body { display: grid; grid-template-columns: minmax(0, 1fr) 68px; gap: 1.6rem; align-items: start; }
+.wk-body { display: grid; grid-template-columns: minmax(0, 1fr) 264px; gap: 1.6rem; align-items: start; }
 
 .wk-banner {
   margin: 0 0 1.2rem; padding: 0.7rem 1rem; border: 1px solid var(--rule); border-left: 4px solid var(--cta);
@@ -30,13 +32,20 @@
 }
 .wk-banner--error { border-left-color: var(--warn); color: var(--warn); }
 
-/* ---------- tray: round icons down the right edge ---------- */
-.wk-tray { position: sticky; top: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.7rem; }
-.wk-tray-cap { font: 600 0.68rem var(--font-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--sub); }
-.wk-tray-items { display: flex; flex-direction: column; gap: 0.8rem; }
+/* ---------- icon box (right): All icons / Create ---------- */
+.wk-box { position: sticky; top: 1rem; background: var(--paper); border: 1px solid var(--edge); border-radius: 12px; padding: 0.7rem 0.9rem 1rem; }
+.wk-box-tabs { display: flex; background: var(--bg); border: 1px solid var(--rule); border-radius: 999px; padding: 3px; margin-bottom: 0.9rem; }
+.wk-box-tabs button { flex: 1; border: none; background: none; color: var(--sub); cursor: pointer; border-radius: 999px; font: 700 0.85rem var(--font-body); padding: 0.4rem 0.6rem; }
+.wk-box-tabs button:hover { color: var(--ink); }
+.wk-box-tabs button.on { background: var(--cta); color: var(--on-cta); }
+.wk-box-hint { margin: 0 0 0.9rem; font-size: 0.8rem; color: var(--sub); }
+.wk-link { border: none; background: none; padding: 0; cursor: pointer; color: var(--cta); font: inherit; text-decoration: underline; }
+.wk-box-error { margin: 0 0 0.7rem; color: var(--warn); font-weight: 600; font-size: 0.85rem; }
+.wk-box-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9rem 0.4rem; justify-items: center; }
 
+.wk-tile-wrap { position: relative; }
 .wk-tile {
-  position: relative; width: 56px; height: 56px; border-radius: 50%; cursor: grab; user-select: none;
+  position: relative; width: 52px; height: 52px; border-radius: 50%; cursor: grab; user-select: none;
   display: grid; place-items: center;
   background: var(--c); color: var(--c-ink); border: 2px solid var(--c-edge, transparent);
   box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.8), inset 0 -4px 8px rgba(0, 0, 0, 0.18), inset 0 3px 6px rgba(255, 255, 255, 0.18);
@@ -46,15 +55,45 @@
 .wk-tile:active { cursor: grabbing; }
 .wk-tile:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .wk-tile.armed { outline: 3px solid var(--ink); outline-offset: 3px; transform: scale(1.08); }
+.wk-tile--static { cursor: default; }
+.wk-tile--static:hover { transform: none; filter: none; }
 
-/* name tooltip, to the left of the icon */
+/* name tooltip, above the icon */
 .wk-tile::after {
-  content: attr(data-label); position: absolute; right: calc(100% + 12px); top: 50%; z-index: 20;
-  transform: translate(6px, -50%); opacity: 0; pointer-events: none; white-space: nowrap;
-  background: var(--ink); color: var(--bg); font: 700 0.8rem var(--font-body);
-  padding: 0.3rem 0.7rem; border-radius: 6px; transition: opacity 0.12s, transform 0.12s;
+  content: attr(data-label); position: absolute; bottom: calc(100% + 8px); left: 50%; z-index: 20;
+  transform: translate(-50%, 4px); opacity: 0; pointer-events: none; white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis;
+  background: var(--ink); color: var(--bg); font: 700 0.8rem var(--font-body); padding: 0.3rem 0.7rem; border-radius: 6px;
+  transition: opacity 0.12s, transform 0.12s;
 }
-.wk-tile:hover::after, .wk-tile:focus-visible::after { opacity: 1; transform: translate(0, -50%); }
+.wk-tile:hover::after, .wk-tile:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+.wk-tile--static::after { display: none; }
+
+.wk-tile-del {
+  position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; padding: 0; cursor: pointer; border-radius: 50%;
+  display: grid; place-items: center; line-height: 1; font-size: 0.95rem; background: var(--bg); color: var(--ink);
+  border: 1px solid var(--rule); opacity: 0; transition: opacity 0.12s;
+}
+.wk-tile-wrap:hover .wk-tile-del, .wk-tile-del:focus-visible { opacity: 1; }
+.wk-tile-del:hover { background: var(--warn); color: var(--bg); }
+
+/* create tab */
+.wk-create-preview { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 1rem; }
+.wk-tag {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0.3rem 0.8rem; border-radius: 999px;
+  background: var(--raise); border: 1px solid var(--c-edge, var(--c)); color: var(--ink); font: 700 0.88rem var(--font-body);
+}
+.wk-fieldset { border: 0; padding: 0; margin: 0 0 0.9rem; min-width: 0; }
+.wk-fieldset legend { padding: 0; margin-bottom: 0.35rem; font: 600 0.75rem var(--font-body); color: var(--sub); text-transform: uppercase; letter-spacing: 0.08em; }
+.wk-glyphs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; max-height: 172px; overflow-y: auto; padding: 3px; }
+.wk-glyph { aspect-ratio: 1; padding: 0; cursor: pointer; border-radius: 50%; display: grid; place-items: center; background: var(--bg); color: var(--ink); border: 1px solid var(--rule); }
+.wk-glyph:hover { border-color: var(--cta); }
+.wk-glyph.on { background: var(--cta); color: var(--on-cta); border-color: var(--cta); }
+.wk-shades { display: flex; gap: 0.55rem; flex-wrap: wrap; padding: 3px; }
+.wk-swatch { width: 28px; height: 28px; padding: 0; cursor: pointer; border-radius: 50%; background: var(--c); border: 2px solid var(--c-edge, transparent); }
+.wk-swatch.on { outline: 3px solid var(--ink); outline-offset: 2px; }
+.wk-create-btn { width: 100%; padding: 0.6rem 1rem; cursor: pointer; border: none; border-radius: 999px; background: var(--cta); color: var(--on-cta); font: 700 0.92rem var(--font-body); }
+.wk-create-btn:hover:not(:disabled) { background: var(--cta-hover); }
+.wk-create-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ---------- calendar card ---------- */
 .wk-card { background: var(--paper); border: 1px solid var(--edge); border-radius: 12px; padding: 1.1rem 1.2rem 1.3rem; min-width: 0; }
@@ -117,24 +156,38 @@
 .wk-cell-chips { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .wk-more { font-size: 0.72rem; font-weight: 700; color: var(--cta); }
 
+/* placed workouts keep their round icon; the name sits beside it as a tag */
 .wk-chip {
-  display: flex; align-items: center; gap: 0.3rem; min-width: 0; cursor: grab;
-  background: var(--c); color: var(--c-ink); border: 1px solid var(--c-edge, transparent); border-radius: 999px;
-  padding: 0.14rem 0.5rem; font: 600 0.74rem var(--font-body);
+  position: relative; display: flex; align-items: center; gap: 0.35rem; min-width: 0; cursor: grab;
+  background: var(--raise); color: var(--ink); border: 1px solid var(--rule); border-radius: 14px;
+  padding: 2px 6px 2px 2px; font: 600 0.7rem/1.15 var(--font-body);
 }
-.wk-chip svg { flex-shrink: 0; }
-.wk-chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wk-chip:hover { filter: brightness(1.1); }
+.wk-dot {
+  flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--c); color: var(--c-ink); border: 1px solid var(--c-edge, transparent);
+}
+.wk-dot--lg { width: 24px; height: 24px; }
+/* names wrap to two lines so the tag stays readable in narrow month cells */
+.wk-chip-text { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.wk-chip:hover { border-color: var(--c-edge, var(--c)); }
 .wk-check {
   flex-shrink: 0; margin-left: auto; width: 16px; height: 16px; padding: 0; cursor: pointer; border-radius: 50%;
   display: grid; place-items: center; background: transparent; color: transparent;
   border: 1.5px solid currentColor; opacity: 0; transition: opacity 0.12s, background 0.12s;
 }
 .wk-check svg { stroke-width: 3; }
-.wk-chip:hover .wk-check, .wk-block:hover .wk-check, .wk-check:focus-visible { opacity: 0.85; color: var(--c-ink); }
+/* in chips the tick floats over the right edge so it doesn't steal width from the name */
+.wk-chip .wk-check { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); margin: 0; }
+.wk-chip:hover .wk-check, .wk-chip .wk-check:focus-visible { background: var(--raise); }
+/* a done chip shows it on the round icon itself: green circle with a check */
+.wk-chip.done .wk-dot { background: var(--ok); color: var(--ok-ink); border-color: var(--ok); }
+.wk-chip.done .wk-check { opacity: 0; background: transparent; color: var(--ink); border-color: currentColor; }
+.wk-chip.done:hover .wk-check, .wk-chip.done .wk-check:focus-visible { opacity: 0.9; background: var(--raise); }
+.wk-untimed .wk-chip .wk-check { position: static; transform: none; margin-left: 0.3rem; }
+.wk-chip:hover .wk-check, .wk-block:hover .wk-check, .wk-check:focus-visible { opacity: 0.85; color: var(--ink); }
 .wk-check:hover { background: color-mix(in srgb, var(--ok) 40%, transparent); }
 /* ticked off: green tick, struck-through title */
-.wk-chip.done .wk-check, .wk-block.done .wk-check { opacity: 1; background: var(--ok); color: var(--ok-ink); border-color: var(--ok); }
+.wk-block.done .wk-check { opacity: 1; background: var(--ok); color: var(--ok-ink); border-color: var(--ok); }
 .wk-chip.done .wk-chip-text, .wk-block.done strong { text-decoration: line-through; text-decoration-thickness: 2px; }
 .wk-chip.done, .wk-block.done { filter: saturate(0.6); }
 
@@ -186,10 +239,11 @@
 .wk-block {
   position: absolute; box-sizing: border-box; overflow: hidden; z-index: 1; cursor: grab;
   display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.3rem 0.55rem;
-  background: var(--c); color: var(--c-ink); border: 1px solid var(--c-edge, rgba(0, 0, 0, 0.35)); border-radius: 8px;
+  background: color-mix(in srgb, var(--c) 26%, var(--bg)); color: var(--ink);
+  border: 1px solid var(--c-edge, var(--c)); border-left-width: 4px; border-radius: 8px;
   font-size: 0.82rem; line-height: 1.2;
 }
-.wk-block svg { flex-shrink: 0; margin-top: 1px; }
+.wk-block .wk-dot { margin-top: 1px; }
 .wk-block-text { min-width: 0; flex: 1; }
 .wk-block strong { display: block; }
 .wk-block .wk-check { width: 18px; height: 18px; }
@@ -239,17 +293,13 @@
 @media (max-width: 760px) {
   .wk-container { padding: 1.6rem 1rem 4rem; }
   .wk-body { grid-template-columns: 1fr; }
-  .wk-tray { position: static; flex-direction: row; justify-content: center; order: -1; }
-  .wk-tray-items { flex-direction: row; }
-  .wk-tile::after { right: auto; left: 50%; top: auto; bottom: calc(100% + 10px); transform: translate(-50%, 6px); }
-  .wk-tile:hover::after, .wk-tile:focus-visible::after { transform: translate(-50%, 0); }
+  .wk-box { position: static; order: -1; }
   .wk-chip .wk-check { display: none; }
-  .wk-chip.done .wk-check { display: grid; }
-  .wk-range { margin-left: 0; width: 100%; font-size: 1.7rem; }
+    .wk-range { margin-left: 0; width: 100%; font-size: 1.7rem; }
   .wk-year { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .wk-cell { min-height: 74px; padding: 0.25rem; }
   .wk-chip-text { display: none; }
-  .wk-chip { padding: 0.2rem 0.35rem; }
+  .wk-chip { padding: 2px; background: none; border-color: transparent; }
   .wk-cell-chips { flex-direction: row; flex-wrap: wrap; }
   .wk-row { flex-direction: column; gap: 0; }
 }

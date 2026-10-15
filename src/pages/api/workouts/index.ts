@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createWorkout, isDateKey, listWorkouts, parseEntryInput } from "../../../db/workouts";
+import { ownsType } from "../../../db/workout-types";
 import type { WorkoutEntryInput } from "../../../db/workouts";
 
 import { json } from "../../../lib/recipe-input";
@@ -28,12 +29,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const v = parsed.value;
   const entry: WorkoutEntryInput = {
     date: v.date!,
-    category: v.category!,
+    category: v.category ?? null,
+    typeId: v.typeId ?? null,
     title: v.title ?? null,
     notes: v.notes ?? null,
     startMinutes: v.startMinutes ?? null,
     durationMinutes: v.durationMinutes ?? 60,
     completed: v.completed ?? false,
   };
+  if (entry.typeId !== null && !(await ownsType(user.id, entry.typeId))) return json({ error: "Unknown icon" }, 400);
   return json(await createWorkout(user.id, entry), 201);
 };

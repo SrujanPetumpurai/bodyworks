@@ -6,7 +6,8 @@ export type WorkoutCategory = (typeof workoutCategoryEnum.enumValues)[number];
 
 export type WorkoutEntryInput = {
   date: string; // YYYY-MM-DD
-  category: WorkoutCategory;
+  category: WorkoutCategory | null; // built-in icon, or…
+  typeId: number | null; // …a custom icon (exactly one is set)
   title: string | null;
   notes: string | null;
   startMinutes: number | null; // minutes from midnight, null = no set time
@@ -30,9 +31,21 @@ export function parseEntryInput(body: any, partial: boolean): Parsed {
     if (!isDateKey(body.date)) return fail("date must be YYYY-MM-DD");
     v.date = body.date;
   }
-  if (!partial || "category" in body) {
-    if (!workoutCategoryEnum.enumValues.includes(body.category)) return fail("Unknown category");
-    v.category = body.category;
+  // The icon is chosen when an entry is created and can't be swapped afterwards,
+  // so PATCH ignores category/typeId.
+  if (!partial) {
+    const hasCategory = body.category !== undefined && body.category !== null;
+    const hasType = body.typeId !== undefined && body.typeId !== null;
+    if (hasCategory === hasType) return fail("Choose one workout icon");
+    if (hasCategory) {
+      if (!workoutCategoryEnum.enumValues.includes(body.category)) return fail("Unknown category");
+      v.category = body.category;
+      v.typeId = null;
+    } else {
+      if (!Number.isInteger(body.typeId) || body.typeId < 1) return fail("Unknown icon");
+      v.typeId = body.typeId;
+      v.category = null;
+    }
   }
   if ("title" in body) {
     if (body.title !== null && (typeof body.title !== "string" || body.title.length > 80)) {
@@ -67,6 +80,7 @@ const columns = {
   id: workoutEntries.id,
   date: workoutEntries.date,
   category: workoutEntries.category,
+  typeId: workoutEntries.typeId,
   title: workoutEntries.title,
   notes: workoutEntries.notes,
   startMinutes: workoutEntries.startMinutes,

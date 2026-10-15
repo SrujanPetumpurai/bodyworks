@@ -1,16 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ComponentType, ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AccountMenu from "../AccountMenu";
+import IconBox from "./IconBox";
+import { BUILTIN, CheckIcon, FALLBACK_TYPE, typeFromCustom, type Category, type CustomType, type TypeDef } from "./icons";
+import type { GlyphKey, Shade } from "../../lib/workout-glyphs";
 
 /* ---------- types ---------- */
 
-type Category = "exercise" | "martial_arts" | "cardio" | "mobility";
 type View = "year" | "month" | "day";
 
 type Entry = {
   id: number;
   date: string; // YYYY-MM-DD
-  category: Category;
+  category: Category | null; // built-in icon…
+  typeId: number | null; // …or a custom icon (exactly one is set)
   title: string | null;
   notes: string | null;
   startMinutes: number | null;
@@ -19,62 +21,8 @@ type Entry = {
 };
 
 type NewEntry = Omit<Entry, "id">;
-type Drag = { kind: "new"; category: Category } | { kind: "move"; id: number };
-
-/* ---------- icons ---------- */
-
-function Svg({ size = 22, children }: { size?: number; children: ReactNode }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {children}
-    </svg>
-  );
-}
-
-const CheckIcon = ({ size }: { size?: number }) => (
-  <Svg size={size}>
-    <path d="M5 12.5l4.5 4.5L19 7" strokeWidth="3" />
-  </Svg>
-);
-const ExerciseIcon = ({ size }: { size?: number }) => (
-  <Svg size={size}>
-    <path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11" />
-  </Svg>
-);
-const MartialArtsIcon = ({ size }: { size?: number }) => (
-  <Svg size={size}>
-    <path d="M7 11V7.5a1.5 1.5 0 0 1 3 0V7a1.5 1.5 0 0 1 3 0v.5a1.5 1.5 0 0 1 3 0V11M7 11h9v4a4 4 0 0 1-4 4h-1a4 4 0 0 1-4-4z" />
-  </Svg>
-);
-const CardioIcon = ({ size }: { size?: number }) => (
-  <Svg size={size}>
-    <path d="M2.5 12H7l2-5 4 10 2-5h6.5" />
-  </Svg>
-);
-const MobilityIcon = ({ size }: { size?: number }) => (
-  <Svg size={size}>
-    <circle cx="12" cy="5" r="2" />
-    <path d="M12 7v6M12 9l-5 3M12 9l5-3M12 13l-3 6M12 13l4 5" />
-  </Svg>
-);
-
-const CATEGORIES: { key: Category; label: string; Icon: ComponentType<{ size?: number }> }[] = [
-  { key: "exercise", label: "Exercise", Icon: ExerciseIcon },
-  { key: "martial_arts", label: "Martial arts", Icon: MartialArtsIcon },
-  { key: "cardio", label: "Cardio", Icon: CardioIcon },
-  { key: "mobility", label: "Mobility", Icon: MobilityIcon },
-];
-const CAT = Object.fromEntries(CATEGORIES.map((c) => [c.key, c])) as Record<Category, (typeof CATEGORIES)[number]>;
+// ref is "c:<category>" for built-in icons or "t:<id>" for custom ones
+type Drag = { kind: "new"; ref: string } | { kind: "move"; id: number };
 
 /* ---------- date helpers (all local time, "YYYY-MM-DD" keys) ---------- */
 
@@ -149,9 +97,10 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
   const [view, setView] = useState<View>("month");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [armed, setArmed] = useState<Category | null>(null); // tap-to-place (touch fallback)
+  const [armed, setArmed] = useState<string | null>(null); // icon ref armed for tap-to-place (touch fallback)
   const [overKey, setOverKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [custom, setCustom] = useState<CustomType[]>([]);
 
   const dragRef = useRef<Drag | null>(null);
   const dayScrollRef = useRef<HTMLDivElement>(null);
@@ -182,6 +131,25 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
       cancelled = true;
     };
   }, [signedIn, cursorYear, ready]);
+
+  useEffect(() => {
+    if (!ready || !signedIn) {
+      setCustom([]);
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/workout-types")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((rows: CustomType[]) => !cancelled && setCustom(rows))
+      .catch(() => !cancelled && setError("Couldn't load your icons."));
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, signedIn]);
+
+  const types = useMemo(() => [...BUILTIN, ...custom.map(typeFromCustom)], [custom]);
+  const typeMap = useMemo(() => new Map(types.map((t) => [t.ref, t])), [types]);
+  const typeOf = (e: Entry): TypeDef => typeMap.get(e.category ? `c:${e.category}` : `t:${e.typeId}`) ?? FALLBACK_TYPE;
 
   const byDate = useMemo(() => {
     const map = new Map<string, Entry[]>();
@@ -246,12 +214,53 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
     }
   }
 
+  async function createIcon(input: { name: string; glyph: GlyphKey; shade: Shade }): Promise<string | null> {
+    try {
+      const res = await fetch("/api/workout-types", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) return data?.error ?? "Couldn't create that icon.";
+      setCustom((c) => [...c, data as CustomType]);
+      return null;
+    } catch {
+      return "Couldn't create that icon.";
+    }
+  }
+
+  async function deleteIcon(t: TypeDef) {
+    if (t.id === null) return;
+    const used = entries.filter((e) => e.typeId === t.id).length;
+    const ok = window.confirm(
+      used
+        ? `Delete “${t.name}”? Its ${used} planned workout${used === 1 ? "" : "s"} will be removed too.`
+        : `Delete “${t.name}”?`
+    );
+    if (!ok) return;
+    try {
+      const res = await fetch(`/api/workout-types/${t.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setCustom((c) => c.filter((x) => x.id !== t.id));
+      setEntries((es) => es.filter((e) => e.typeId !== t.id));
+      if (armed === t.ref) setArmed(null);
+    } catch {
+      setError("Couldn't delete that icon.");
+    }
+  }
+
   const toggleDone = (e: Entry) => patch(e.id, { completed: !e.completed });
 
   /* ----- placing things ----- */
-  function place(category: Category, date: string, startMinutes: number | null) {
+  function place(ref: string, date: string, startMinutes: number | null) {
     if (!signedIn) return setError("Sign in to plan workouts.");
-    create({ date, category, title: null, notes: null, startMinutes, durationMinutes: 60, completed: false });
+    const base = { date, title: null, notes: null, startMinutes, durationMinutes: 60, completed: false };
+    create(
+      ref.startsWith("t:")
+        ? { ...base, category: null, typeId: Number(ref.slice(2)) }
+        : { ...base, category: ref.slice(2) as Category, typeId: null }
+    );
   }
 
   // startMinutes: undefined = keep existing time, null = clear it, number = set it
@@ -260,7 +269,7 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
     dragRef.current = null;
     setOverKey(null);
     if (!d) return;
-    if (d.kind === "new") return place(d.category, date, startMinutes ?? null);
+    if (d.kind === "new") return place(d.ref, date, startMinutes ?? null);
     patch(d.id, { date, ...(startMinutes !== undefined ? { startMinutes } : {}) });
   }
 
@@ -365,23 +374,20 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
   );
 
   const chip = (e: Entry) => {
-    const { Icon, label } = CAT[e.category];
+    const t = typeOf(e);
     return (
       <div
         key={e.id}
-        className={`wk-chip wk-cat--${e.category} ${e.completed ? "done" : ""}`}
+        className={`wk-chip wk-shade--${t.shade} ${e.completed ? "done" : ""}`}
         {...entryDragProps(e)}
         onClick={(ev) => {
           ev.stopPropagation();
           setSelectedId(e.id);
         }}
-        title={`${e.title ?? label}${e.startMinutes != null ? ` · ${fmtTime(e.startMinutes)}` : ""}${e.completed ? " · done" : ""}`}
+        title={`${e.title ?? t.name}${e.startMinutes != null ? ` · ${fmtTime(e.startMinutes)}` : ""}${e.completed ? " · done" : ""}`}
       >
-        <Icon size={14} />
-        <span className="wk-chip-text">
-          {e.startMinutes != null && <b>{fmtTime(e.startMinutes)} </b>}
-          {e.title ?? label}
-        </span>
+        <span className="wk-dot">{e.completed ? <CheckIcon size={12} /> : <t.Icon size={12} />}</span>
+        <span className="wk-chip-text">{e.title ?? t.name}</span>
         {checkButton(e)}
       </div>
     );
@@ -453,7 +459,7 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
               {monthCells(cursorYear, m).map((c) => {
                 if (!c.inMonth) return <span key={c.key} />;
                 const list = byDate.get(c.key) ?? [];
-                const cats = [...new Set(list.map((e) => e.category))];
+                const cats = [...new Set(list.map((e) => typeOf(e).shade))];
                 const allDone = list.length > 0 && list.every((e) => e.completed);
                 return (
                   <button
@@ -468,7 +474,7 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
                     {cats.length > 0 && (
                       <span className="wk-dots">
                         {cats.slice(0, 3).map((k) => (
-                          <i key={k} className={`wk-cat--${k}`} />
+                          <i key={k} className={`wk-shade--${k}`} />
                         ))}
                       </span>
                     )}
@@ -536,11 +542,11 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
 
             {timed.map((e) => {
               const pos = lay.get(e.id) ?? { col: 0, cols: 1 };
-              const { Icon, label } = CAT[e.category];
+              const t = typeOf(e);
               return (
                 <div
                   key={e.id}
-                  className={`wk-block wk-cat--${e.category} ${e.completed ? "done" : ""}`}
+                  className={`wk-block wk-shade--${t.shade} ${e.completed ? "done" : ""}`}
                   style={{
                     top: (e.startMinutes! / 60) * HOUR_H,
                     height: Math.max((e.durationMinutes / 60) * HOUR_H - 2, 26),
@@ -553,9 +559,9 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
                     setSelectedId(e.id);
                   }}
                 >
-                  <Icon size={16} />
+                  <span className="wk-dot wk-dot--lg"><t.Icon size={14} /></span>
                   <div className="wk-block-text">
-                    <strong>{e.title ?? label}</strong>
+                    <strong>{e.title ?? t.name}</strong>
                     <small>
                       {fmtTime(e.startMinutes!)} – {fmtTime((e.startMinutes! + e.durationMinutes) % 1440)}
                     </small>
@@ -599,7 +605,7 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
         {error && <p className="wk-banner wk-banner--error" role="alert">{error}</p>}
         {armed && (
           <p className="wk-banner" role="status">
-            Placing <b>{CAT[armed].label}</b> — tap a date. Tap the icon again, or press Esc, to cancel.
+            Placing <b>{typeMap.get(armed)?.name ?? "icon"}</b> — tap a date. Tap the icon again, or press Esc, to cancel.
           </p>
         )}
 
@@ -638,41 +644,21 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
             {ready && view === "day" && renderDay()}
             {!ready && <div className="wk-loading" aria-hidden="true" />}
           </section>
-          <aside className="wk-tray" aria-label="Workout icons — drag onto a date">
-            <span className="wk-tray-cap">Drag</span>
-            <div className="wk-tray-items">
-              {CATEGORIES.map(({ key, label, Icon }) => (
-                <div
-                  key={key}
-                  role="button"
-                  tabIndex={0}
-                  aria-pressed={armed === key}
-                  aria-label={label}
-                  data-label={label}
-                  className={`wk-tile wk-cat--${key} ${armed === key ? "armed" : ""}`}
-                  draggable
-                  onDragStart={(e) => {
-                    dragRef.current = { kind: "new", category: key };
-                    e.dataTransfer.effectAllowed = "copy";
-                    e.dataTransfer.setData("text/plain", key);
-                  }}
-                  onDragEnd={() => {
-                    dragRef.current = null;
-                    setOverKey(null);
-                  }}
-                  onClick={() => setArmed((a) => (a === key ? null : key))}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setArmed((a) => (a === key ? null : key));
-                    }
-                  }}
-                >
-                  <Icon size={26} />
-                </div>
-              ))}
-            </div>
-          </aside>
+          <IconBox
+            types={types}
+            signedIn={signedIn}
+            armed={armed}
+            onArm={setArmed}
+            onDragStart={(ref) => {
+              dragRef.current = { kind: "new", ref };
+            }}
+            onDragEnd={() => {
+              dragRef.current = null;
+              setOverKey(null);
+            }}
+            onCreate={createIcon}
+            onDelete={deleteIcon}
+          />
         </div>
       </div>
 
@@ -680,6 +666,7 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
         <EntryModal
           key={selected.id}
           entry={selected}
+          type={typeOf(selected)}
           onClose={() => setSelectedId(null)}
           onPatch={(c) => patch(selected.id, c)}
           onDelete={() => {
@@ -708,16 +695,18 @@ function NowLine() {
 
 function EntryModal({
   entry,
+  type,
   onClose,
   onPatch,
   onDelete,
 }: {
   entry: Entry;
+  type: TypeDef;
   onClose: () => void;
   onPatch: (c: Partial<NewEntry>) => void;
   onDelete: () => void;
 }) {
-  const { Icon, label } = CAT[entry.category];
+  const { Icon, name: label } = type;
   const durations = DURATIONS.includes(entry.durationMinutes)
     ? DURATIONS
     : [...DURATIONS, entry.durationMinutes].sort((a, b) => a - b);
@@ -726,7 +715,7 @@ function EntryModal({
     <div className="wk-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="wk-modal" role="dialog" aria-modal="true" aria-label={`Edit ${label}`}>
         <button type="button" className="wk-modal-close" onClick={onClose} aria-label="Close">×</button>
-        <div className={`wk-modal-head wk-cat--${entry.category}`}>
+        <div className={`wk-modal-head wk-shade--${type.shade}`}>
           <span className="wk-modal-icon"><Icon size={22} /></span>
           <h2>{label}</h2>
         </div>

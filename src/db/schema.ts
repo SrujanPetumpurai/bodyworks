@@ -408,6 +408,23 @@ export const workoutCategoryEnum = pgEnum("workout_category", [
   "mobility",
 ]);
 
+// Icons a user creates themselves (name + symbol + red shade). The four built-in
+// icons are not rows here — they live in the app and are referenced by `category`.
+export const workoutTypes = pgTable(
+  "workout_types",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    glyph: text("glyph").notNull(), // key into src/lib/workout-glyphs.ts
+    shade: text("shade").notNull(), // key into src/lib/workout-glyphs.ts
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("workout_types_user_idx").on(table.userId)]
+);
+
 export const workoutEntries = pgTable(
   "workout_entries",
   {
@@ -417,7 +434,9 @@ export const workoutEntries = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     // plain "YYYY-MM-DD" string — a calendar day, no timezone shifting
     date: date("date", { mode: "string" }).notNull(),
-    category: workoutCategoryEnum("category").notNull(),
+    // exactly one of category (built-in icon) / typeId (custom icon) is set
+    category: workoutCategoryEnum("category"),
+    typeId: integer("type_id").references(() => workoutTypes.id, { onDelete: "cascade" }),
     title: text("title"),
     notes: text("notes"),
     // minutes from midnight (0–1439); null = planned for the day with no set time
@@ -429,6 +448,8 @@ export const workoutEntries = pgTable(
   },
   (table) => [
     index("workout_entries_user_date_idx").on(table.userId, table.date),
+    index("workout_entries_type_idx").on(table.typeId),
+    check("workout_one_icon", sql`(${table.category} IS NULL) <> (${table.typeId} IS NULL)`),
     check(
       "workout_start_minutes_range",
       sql`${table.startMinutes} IS NULL OR (${table.startMinutes} >= 0 AND ${table.startMinutes} < 1440)`
