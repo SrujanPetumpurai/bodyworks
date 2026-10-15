@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { deleteWorkout, parseEntryInput, updateWorkout } from "../../../db/workouts";
+import { deleteWorkout, parseEntryInput, updateWorkout, type DeleteScope } from "../../../db/workouts";
 
 import { json } from "../../../lib/recipe-input";
 
@@ -26,13 +26,17 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
   return row ? json(row) : json({ error: "Not found" }, 404);
 };
 
-export const DELETE: APIRoute = async ({ params, locals }) => {
+// ?scope=this (default) | following | all — the last two remove the rest of a repeat series too
+export const DELETE: APIRoute = async ({ params, url, locals }) => {
   const user = locals.user;
   if (!user) return json({ error: "Sign in to edit your plan" }, 401);
 
   const id = parseId(params.id);
   if (!id) return json({ error: "Invalid id" }, 400);
 
-  const ok = await deleteWorkout(user.id, id);
+  const scope = (url.searchParams.get("scope") ?? "this") as DeleteScope;
+  if (!["this", "following", "all"].includes(scope)) return json({ error: "Invalid scope" }, 400);
+
+  const ok = await deleteWorkout(user.id, id, scope);
   return ok ? json({ ok: true }) : json({ error: "Not found" }, 404);
 };

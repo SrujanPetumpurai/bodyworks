@@ -1,6 +1,7 @@
 import { and, asc, eq, gte, lte } from "drizzle-orm";
 import { db } from "./index";
 import { workoutEntries, workoutCategoryEnum } from "./schema";
+import { MAX_OCCURRENCES, occurrenceDates, validateRule } from "../lib/workout-repeat";
 
 export type WorkoutCategory = (typeof workoutCategoryEnum.enumValues)[number];
 
@@ -86,6 +87,7 @@ const columns = {
   startMinutes: workoutEntries.startMinutes,
   durationMinutes: workoutEntries.durationMinutes,
   completed: workoutEntries.completed,
+  seriesId: workoutEntries.seriesId,
 };
 
 export async function listWorkouts(userId: string, from: string, to: string) {
@@ -113,10 +115,71 @@ export async function updateWorkout(userId: string, id: number, changes: Partial
   return row ?? null;
 }
 
-export async function deleteWorkout(userId: string, id: number) {
-  const rows = await db
-    .delete(workoutEntries)
+export type DeleteScope = "this" | "following" | "all";
+
+// "following" / "all" only matter for workouts that belong to a repeat series.
+export async function deleteWorkout(userId: string, id: number, scope: DeleteScope = "this") {
+  const [src] = await db
+    .select({ date: workoutEntries.date, seriesId: workoutEntries.seriesId })
+    .from(workoutEntries)
     .where(and(eq(workoutEntries.id, id), eq(workoutEntries.userId, userId)))
-    .returning({ id: workoutEntries.id });
-  return rows.length > 0;
+    .limit(1);
+  if (!src) return false;
+
+  const mine = and(eq(workoutEntries.userId, userId));
+  const where =
+    scope === "this" || !src.seriesId
+      ? and(mine, eq(workoutEntries.id, id))
+      : scope === "all"
+        ? and(mine, eq(workoutEntries.seriesId, src.seriesId))
+        : and(mine, eq(workoutEntries.seriesId, src.seriesId), gte(workoutEntries.date, src.date));
+
+  await db.delete(workoutEntries).where(where);
+  return true;
+}
+
+export type RepeatResult =
+  | { ok: true; seriesId: string; created: Awaited<ReturnType<typeof listWorkouts>> }
+  | { ok: false; status: 400 | 404; error: string };
+
+// Turns one workout into a series: copies it onto every date the rule produces.
+// The copies start un-done; each one can then be moved, ticked or edited on its own.
+export async function repeatWorkout(userId: string, id: number, rawRule: unknown): Promise<RepeatResult> {
+  const [src] = await db
+    .select()
+    .from(workoutEntries)
+    .where(and(eq(workoutEntries.id, id), eq(workoutEntries.userId, userId)))
+    .limit(1);
+  if (!src) return { ok: false, status: 404, error: "Not found" };
+  if (src.seriesId) return { ok: false, status: 400, error: "This workout already repeats. Delete the series to start over." };
+
+  const checked = validateRule(src.date, rawRule);
+  if (!checked.ok) return { ok: false, status: 400, error: checked.error };
+
+  const dates = occurrenceDates(src.date, checked.rule);
+  if (dates.length === 0) return { ok: false, status: 400, error: "That rule doesn't produce any new dates." };
+  if (dates.length > MAX_OCCURRENCES) {
+    return { ok: false, status: 400, error: `That would add more than ${MAX_OCCURRENCES} workouts. Shorten the end date.` };
+  }
+
+  const seriesId = crypto.randomUUID();
+  const rows = dates.map((date) => ({
+    userId,
+    date,
+    category: src.category,
+    typeId: src.typeId,
+    title: src.title,
+    notes: src.notes,
+    startMinutes: src.startMinutes,
+    durationMinutes: src.durationMinutes,
+    completed: false,
+    seriesId,
+  }));
+
+  // one HTTP round-trip, applied atomically: either the whole series exists or none of it does
+  const [, created] = await db.batch([
+    db.update(workoutEntries).set({ seriesId }).where(and(eq(workoutEntries.id, id), eq(workoutEntries.userId, userId))),
+    db.insert(workoutEntries).values(rows).returning(columns),
+  ]);
+  return { ok: true, seriesId, created };
 }

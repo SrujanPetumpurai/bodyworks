@@ -288,6 +288,37 @@
 .wk-done { background: var(--cta); color: var(--on-cta); border-color: var(--cta) !important; }
 .wk-done:hover { background: var(--cta-hover); }
 
+/* ---------- repeat (edit dialog) ---------- */
+.wk-series-note { display: flex; align-items: center; gap: 0.4rem; margin: 0 0 1rem; color: var(--sub); font: 600 0.85rem var(--font-body); }
+.wk-repeat-toggle {
+  display: inline-flex; align-items: center; gap: 0.4rem; margin: 0 0 1rem; padding: 0.45rem 0.9rem; cursor: pointer;
+  background: none; color: var(--ink); border: 1px dashed var(--rule); border-radius: 999px; font: 700 0.85rem var(--font-body);
+}
+.wk-repeat-toggle:hover { border-color: var(--cta); color: var(--cta); }
+.wk-repeat { display: grid; gap: 0.75rem; margin: 0 0 1rem; padding: 0.85rem 0.9rem; background: var(--bg); border: 1px solid var(--rule); border-radius: 10px; }
+.wk-repeat-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; font-size: 0.9rem; color: var(--sub); }
+.wk-repeat select, .wk-repeat input[type="date"] {
+  background: var(--paper); color: var(--ink); color-scheme: dark; border: 1px solid var(--rule); border-radius: 8px;
+  padding: 0.35rem 0.5rem; font: 500 0.9rem var(--font-body);
+}
+.wk-repeat select:focus, .wk-repeat input:focus-visible { outline: 3px solid var(--cta); outline-offset: 1px; }
+.wk-repeat-until { display: flex; align-items: center; gap: 0.5rem; }
+.wk-days { display: flex; gap: 0.4rem; }
+.wk-days button { width: 32px; height: 32px; padding: 0; cursor: pointer; border-radius: 50%; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); font: 700 0.8rem var(--font-body); }
+.wk-days button:hover { border-color: var(--cta); }
+.wk-days button.on { background: var(--cta); color: var(--on-cta); border-color: var(--cta); }
+.wk-quick { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.wk-quick button { padding: 0.25rem 0.6rem; cursor: pointer; border-radius: 999px; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); font: 600 0.78rem var(--font-body); }
+.wk-quick button:hover { border-color: var(--cta); color: var(--cta); }
+.wk-repeat-summary { margin: 0; color: var(--ink); font: 600 0.85rem var(--font-body); }
+.wk-repeat-summary.bad { color: var(--warn); }
+.wk-repeat-actions { display: flex; justify-content: space-between; align-items: center; }
+.wk-repeat-actions .wk-create-btn { width: auto; padding: 0.5rem 1.4rem; }
+.wk-delete-scope { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0 0 0.8rem; padding: 0.6rem 0.7rem; border: 1px solid var(--warn); border-radius: 10px; font-size: 0.85rem; }
+.wk-delete-scope span { font-weight: 700; color: var(--warn); margin-right: 0.2rem; }
+.wk-delete-scope button:not(.wk-link) { padding: 0.3rem 0.7rem; cursor: pointer; border-radius: 999px; background: none; color: var(--ink); border: 1px solid var(--rule); font: 600 0.8rem var(--font-body); }
+.wk-delete-scope button:not(.wk-link):hover { border-color: var(--warn); color: var(--warn); }
+
 /* ---------- responsive ---------- */
 @media (max-width: 960px) { .wk-year { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) {
@@ -304,3 +335,4 @@
   .wk-row { flex-direction: column; gap: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .wk-tile, .wk-cell, .wk-tile::after, .wk-check { transition: none; } .wk-tile:hover, .wk-tile.armed { transform: none; } }
+.wk-row .wk-field:first-child { flex: 1.5; }

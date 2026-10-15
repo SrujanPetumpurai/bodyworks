@@ -3,6 +3,7 @@ import AccountMenu from "../AccountMenu";
 import IconBox from "./IconBox";
 import { BUILTIN, CheckIcon, FALLBACK_TYPE, typeFromCustom, type Category, type CustomType, type TypeDef } from "./icons";
 import type { GlyphKey, Shade } from "../../lib/workout-glyphs";
+import { MAX_OCCURRENCES, addDays, occurrenceDates, validateRule, weekdayOf, type RepeatRule } from "../../lib/workout-repeat";
 
 /* ---------- types ---------- */
 
@@ -18,6 +19,7 @@ type Entry = {
   startMinutes: number | null;
   durationMinutes: number;
   completed: boolean;
+  seriesId: string | null; // shared by every workout created from one "Repeat"
 };
 
 type NewEntry = Omit<Entry, "id">;
@@ -183,34 +185,63 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
     }
   }
 
-  async function patch(id: number, changes: Partial<NewEntry>) {
+  // in-flight PATCH requests; "Repeat" waits for these so copies never use stale values
+  const pending = useRef(new Set<Promise<unknown>>());
+
+  function patch(id: number, changes: Partial<NewEntry>) {
     if (id < 0) return;
     const prev = entries.find((e) => e.id === id);
     if (!prev) return;
     setEntries((es) => es.map((e) => (e.id === id ? { ...e, ...changes } : e)));
-    try {
-      const res = await fetch(`/api/workouts/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(changes),
+    const run = fetch(`/api/workouts/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(changes),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error();
+      })
+      .catch(() => {
+        setEntries((es) => es.map((e) => (e.id === id ? prev : e)));
+        setError("Couldn't update that workout.");
       });
+    pending.current.add(run);
+    run.finally(() => pending.current.delete(run));
+  }
+
+  // scope: "this" | "following" | "all" — the last two also remove the rest of a repeat series
+  async function removeEntry(entry: Entry, scope: "this" | "following" | "all") {
+    if (entry.id < 0) return;
+    const inSeries = (x: Entry) =>
+      scope !== "this" && entry.seriesId !== null && x.seriesId === entry.seriesId && (scope === "all" || x.date >= entry.date);
+    const gone = entries.filter((x) => x.id === entry.id || inSeries(x));
+    const ids = new Set(gone.map((x) => x.id));
+    setEntries((es) => es.filter((x) => !ids.has(x.id)));
+    try {
+      const res = await fetch(`/api/workouts/${entry.id}?scope=${scope}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
     } catch {
-      setEntries((es) => es.map((e) => (e.id === id ? prev : e)));
-      setError("Couldn't update that workout.");
+      setEntries((es) => [...es, ...gone]);
+      setError("Couldn't delete that workout.");
     }
   }
 
-  async function remove(id: number) {
-    if (id < 0) return;
-    const prev = entries.find((e) => e.id === id);
-    setEntries((es) => es.filter((e) => e.id !== id));
+  // resolves to an error message, or null on success
+  async function repeatEntry(entry: Entry, rule: RepeatRule): Promise<string | null> {
+    if (entry.id < 0) return "Still saving — try again in a moment.";
+    await Promise.allSettled([...pending.current]);
     try {
-      const res = await fetch(`/api/workouts/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
+      const res = await fetch(`/api/workouts/${entry.id}/repeat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rule),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) return data?.error ?? "Couldn't create the repeats.";
+      setEntries((es) => [...es.map((x) => (x.id === entry.id ? { ...x, seriesId: data.seriesId } : x)), ...(data.created as Entry[])]);
+      return null;
     } catch {
-      if (prev) setEntries((es) => [...es, prev]);
-      setError("Couldn't delete that workout.");
+      return "Couldn't create the repeats.";
     }
   }
 
@@ -255,7 +286,7 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
   /* ----- placing things ----- */
   function place(ref: string, date: string, startMinutes: number | null) {
     if (!signedIn) return setError("Sign in to plan workouts.");
-    const base = { date, title: null, notes: null, startMinutes, durationMinutes: 60, completed: false };
+    const base = { date, title: null, notes: null, startMinutes, durationMinutes: 60, completed: false, seriesId: null };
     create(
       ref.startsWith("t:")
         ? { ...base, category: null, typeId: Number(ref.slice(2)) }
@@ -384,7 +415,7 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
           ev.stopPropagation();
           setSelectedId(e.id);
         }}
-        title={`${e.title ?? t.name}${e.startMinutes != null ? ` · ${fmtTime(e.startMinutes)}` : ""}${e.completed ? " · done" : ""}`}
+        title={`${e.title ?? t.name}${e.startMinutes != null ? ` · ${fmtTime(e.startMinutes)}` : ""}${e.completed ? " · done" : ""}${e.seriesId ? " · repeats" : ""}`}
       >
         <span className="wk-dot">{e.completed ? <CheckIcon size={12} /> : <t.Icon size={12} />}</span>
         <span className="wk-chip-text">{e.title ?? t.name}</span>
@@ -669,8 +700,9 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
           type={typeOf(selected)}
           onClose={() => setSelectedId(null)}
           onPatch={(c) => patch(selected.id, c)}
-          onDelete={() => {
-            remove(selected.id);
+          onRepeat={(rule) => repeatEntry(selected, rule)}
+          onDelete={(scope) => {
+            removeEntry(selected, scope);
             setSelectedId(null);
           }}
         />
@@ -698,14 +730,17 @@ function EntryModal({
   type,
   onClose,
   onPatch,
+  onRepeat,
   onDelete,
 }: {
   entry: Entry;
   type: TypeDef;
   onClose: () => void;
   onPatch: (c: Partial<NewEntry>) => void;
-  onDelete: () => void;
+  onRepeat: (rule: RepeatRule) => Promise<string | null>;
+  onDelete: (scope: "this" | "following" | "all") => void;
 }) {
+  const [askDelete, setAskDelete] = useState(false);
   const { Icon, name: label } = type;
   const durations = DURATIONS.includes(entry.durationMinutes)
     ? DURATIONS
@@ -790,11 +825,151 @@ function EntryModal({
           />
         </label>
 
+        {entry.seriesId ? (
+          <p className="wk-series-note"><RepeatGlyph /> Part of a repeating series</p>
+        ) : (
+          <RepeatSection entry={entry} onRepeat={onRepeat} />
+        )}
+
+        {askDelete && (
+          <div className="wk-delete-scope" role="group" aria-label="What should be deleted?">
+            <span>Delete…</span>
+            <button type="button" onClick={() => onDelete("this")}>Just this one</button>
+            <button type="button" onClick={() => onDelete("following")}>This and following</button>
+            <button type="button" onClick={() => onDelete("all")}>Entire series</button>
+            <button type="button" className="wk-link" onClick={() => setAskDelete(false)}>Cancel</button>
+          </div>
+        )}
+
         <div className="wk-modal-actions">
-          <button type="button" className="wk-delete" onClick={onDelete}>Delete</button>
+          <button type="button" className="wk-delete" onClick={() => (entry.seriesId ? setAskDelete(true) : onDelete("this"))}>Delete</button>
           <button type="button" className="wk-done" onClick={onClose}>Close</button>
         </div>
       </div>
     </div>
   );
+}
+
+
+/* ---------- repeat ---------- */
+
+const RepeatGlyph = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3" />
+  </svg>
+);
+
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const QUICK_ENDS = [
+  { label: "4 wks", days: 28 },
+  { label: "8 wks", days: 56 },
+  { label: "3 mo", days: 91 },
+  { label: "6 mo", days: 182 },
+];
+
+function RepeatSection({ entry, onRepeat }: { entry: Entry; onRepeat: (rule: RepeatRule) => Promise<string | null> }) {
+  const [open, setOpen] = useState(false);
+  const [frequency, setFrequency] = useState<"daily" | "weekly">("weekly");
+  const [every, setEvery] = useState(1);
+  const [days, setDays] = useState<number[]>([weekdayOf(entry.date)]);
+  const [until, setUntil] = useState(addDays(entry.date, 56));
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  // the same function the server uses, so the preview always matches what gets created
+  const rule: RepeatRule = { frequency, interval: every, days: frequency === "weekly" ? days : [], until };
+  const checked = validateRule(entry.date, rule);
+  const dates = checked.ok ? occurrenceDates(entry.date, checked.rule) : [];
+  const problem = !checked.ok
+    ? checked.error
+    : dates.length === 0
+      ? "No dates match those settings."
+      : dates.length > MAX_OCCURRENCES
+        ? `That's more than ${MAX_OCCURRENCES} workouts — shorten the end date.`
+        : null;
+  const last = dates[dates.length - 1];
+
+  async function submit() {
+    if (problem || busy) return;
+    setBusy(true);
+    setMsg(null);
+    const err = await onRepeat(rule);
+    setBusy(false);
+    if (err) setMsg(err);
+    else setOpen(false);
+  }
+
+  if (!open) {
+    return (
+      <button type="button" className="wk-repeat-toggle" onClick={() => setOpen(true)}>
+        <RepeatGlyph /> Repeat…
+      </button>
+    );
+  }
+
+  const unit = frequency === "daily" ? "day" : "week";
+  return (
+    <div className="wk-repeat" role="group" aria-label="Repeat this workout">
+      <div className="wk-repeat-row">
+        <select aria-label="Frequency" value={frequency} onChange={(e) => setFrequency(e.target.value as "daily" | "weekly")}>
+          <option value="weekly">Weekly</option>
+          <option value="daily">Daily</option>
+        </select>
+        <span>every</span>
+        <select aria-label="Interval" value={every} onChange={(e) => setEvery(Number(e.target.value))}>
+          {[1, 2, 3, 4].map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+        <span>{unit}{every === 1 ? "" : "s"}</span>
+      </div>
+
+      {frequency === "weekly" && (
+        <div className="wk-days" role="group" aria-label="Days of the week">
+          {WEEKDAYS.map((name, i) => (
+            <button
+              key={name}
+              type="button"
+              aria-pressed={days.includes(i)}
+              aria-label={name}
+              title={name}
+              className={days.includes(i) ? "on" : ""}
+              onClick={() => setDays((d) => (d.includes(i) ? d.filter((x) => x !== i) : [...d, i]))}
+            >
+              {name[0]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="wk-repeat-row">
+        <label className="wk-repeat-until">
+          <span>Until</span>
+          <input type="date" value={until} min={addDays(entry.date, 1)} onChange={(e) => e.target.value && setUntil(e.target.value)} />
+        </label>
+        <div className="wk-quick">
+          {QUICK_ENDS.map((q) => (
+            <button key={q.label} type="button" onClick={() => setUntil(addDays(entry.date, q.days))}>{q.label}</button>
+          ))}
+        </div>
+      </div>
+
+      <p className={`wk-repeat-summary ${problem ? "bad" : ""}`} aria-live="polite">
+        {problem ?? `Adds ${dates.length} more workout${dates.length === 1 ? "" : "s"}, through ${fmtLong(last)}.`}
+      </p>
+      {msg && <p className="wk-box-error" role="alert">{msg}</p>}
+
+      <div className="wk-repeat-actions">
+        <button type="button" className="wk-link" onClick={() => setOpen(false)}>Cancel</button>
+        <button type="button" className="wk-create-btn" disabled={!!problem || busy} onClick={submit}>
+          {busy ? "Creating…" : "Repeat"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function fmtLong(key: string | undefined) {
+  if (!key) return "";
+  return fromKey(key).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }

@@ -444,11 +444,14 @@ export const workoutEntries = pgTable(
     durationMinutes: integer("duration_minutes").notNull().default(60),
     // ticked off once the workout has been done
     completed: boolean("completed").notNull().default(false),
+    // workouts created by "Repeat" share a series id (a random UUID); null = a one-off
+    seriesId: text("series_id"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
     index("workout_entries_user_date_idx").on(table.userId, table.date),
     index("workout_entries_type_idx").on(table.typeId),
+    index("workout_entries_series_idx").on(table.seriesId),
     check("workout_one_icon", sql`(${table.category} IS NULL) <> (${table.typeId} IS NULL)`),
     check(
       "workout_start_minutes_range",
