@@ -43,6 +43,13 @@
       "when": 1792035392777,
       "tag": "0005_workout_series",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792069837565,
+      "tag": "0006_meal_plan",
+      "breakpoints": true
     }
   ]
 }

@@ -465,6 +465,34 @@ export const workoutEntries = pgTable(
 );
 
 // =====================================================================
+// MEAL PLANNER — recipes a user has placed on their weekly calendar
+// =====================================================================
+
+export const mealSlotEnum = pgEnum("meal_slot", ["breakfast", "lunch", "dinner", "snack"]);
+
+export const mealPlanEntries = pgTable(
+  "meal_plan_entries",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    // deleting a recipe removes it from everyone's plan
+    recipeId: integer("recipe_id")
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    // plain "YYYY-MM-DD" string — a calendar day, no timezone shifting
+    date: date("date", { mode: "string" }).notNull(),
+    slot: mealSlotEnum("slot").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("meal_plan_user_date_idx").on(table.userId, table.date),
+    index("meal_plan_recipe_idx").on(table.recipeId),
+  ]
+);
+
+// =====================================================================
 // RELATIONS
 // =====================================================================
 

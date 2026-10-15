@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AccountMenu from "../AccountMenu";
 import Avatar from "./Avatar";
+import MealPlanner from "./MealPlanner";
 import RecipeCard from "./RecipeCard";
 import RecipeModal from "./RecipeModal";
 
@@ -32,7 +33,29 @@ const RATING_OPTIONS = [
   { label: "4★ & up", value: 4 },
 ];
 
-export default function RecipesBrowser({ foods, recipes }: { foods: Food[]; recipes: RecipeSummary[] }) {
+type Tab = "browse" | "plan";
+
+export default function RecipesBrowser({
+  foods,
+  recipes,
+  signedIn,
+}: {
+  foods: Food[];
+  recipes: RecipeSummary[];
+  signedIn: boolean;
+}) {
+  const [tab, setTab] = useState<Tab>("browse");
+
+  // /recipes#plan opens the meal plan directly (read after mount so server and client render match)
+  useEffect(() => {
+    if (location.hash === "#plan") setTab("plan");
+  }, []);
+
+  function switchTab(next: Tab) {
+    setTab(next);
+    history.replaceState(null, "", next === "plan" ? "#plan" : location.pathname + location.search);
+  }
+
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [ingredientInput, setIngredientInput] = useState("");
@@ -116,6 +139,21 @@ export default function RecipesBrowser({ foods, recipes }: { foods: Food[]; reci
         <AccountMenu />
       </header>
 
+      <div className="mp-tabbar">
+        <div className="mp-tabs" role="tablist" aria-label="Recipes sections">
+          <button type="button" role="tab" aria-selected={tab === "browse"} className={tab === "browse" ? "on" : ""} onClick={() => switchTab("browse")}>
+            Browse
+          </button>
+          <button type="button" role="tab" aria-selected={tab === "plan"} className={tab === "plan" ? "on" : ""} onClick={() => switchTab("plan")}>
+            Meal plan
+          </button>
+        </div>
+      </div>
+
+      {tab === "plan" ? (
+        <MealPlanner recipes={recipes} signedIn={signedIn} />
+      ) : (
+        <>
       <section className="rb-hero">
         <h1 className="rb-title">Recipes</h1>
         <p className="rb-lede">High-protein meals. Add what you have and see what you can cook.</p>
@@ -252,6 +290,8 @@ export default function RecipesBrowser({ foods, recipes }: { foods: Food[]; reci
       </div>
 
       {activeSlug && <RecipeModal slug={activeSlug} onClose={() => setActiveSlug(null)} />}
+        </>
+      )}
     </div>
   );
 }

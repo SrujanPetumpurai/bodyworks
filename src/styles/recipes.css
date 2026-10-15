@@ -211,3 +211,115 @@ html, body { margin: 0; background: #0f1210; }
 @media (prefers-reduced-motion: reduce) {
   .rb-card, .rb-card:hover { transition: none; transform: none; }
 }
+
+/* ---------- recipes page tabs: Browse / Meal plan ---------- */
+.mp-tabbar { max-width: 1180px; margin: 0 auto; padding: 1.2rem 2rem 0; box-sizing: border-box; }
+.mp-tabs { display: inline-flex; background: var(--paper); border: 1px solid var(--rule); border-radius: 999px; padding: 3px; }
+.mp-tabs button {
+  border: none; background: none; color: var(--sub); cursor: pointer; border-radius: 999px;
+  font: 700 0.88rem var(--font-body); padding: 0.45rem 1.2rem;
+}
+.mp-tabs button:hover { color: var(--ink); }
+.mp-tabs button.on { background: var(--cta); color: var(--on-cta); }
+
+/* ---------- meal plan: weekly grid + recipe tray (same lime theme as the rest of the page) ---------- */
+.mp-wrap { max-width: 1180px; margin: 0 auto; padding: 1.4rem 2rem 5rem; box-sizing: border-box; }
+.mp-body { display: grid; grid-template-columns: minmax(0, 1fr) 264px; gap: 1.6rem; align-items: start; }
+
+.mp-banner {
+  margin: 0 0 1.2rem; padding: 0.7rem 1rem; border: 1px solid var(--rule); border-left: 4px solid var(--cta);
+  border-radius: 8px; background: var(--paper); font-weight: 600; font-size: 0.95rem;
+}
+.mp-banner--error { border-left-color: var(--warn); color: var(--warn); }
+
+.mp-card { background: var(--paper); border: 1px solid var(--edge); border-radius: 12px; padding: 1.1rem 1.2rem 1.3rem; min-width: 0; }
+.mp-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem 1.2rem; padding-bottom: 0.9rem; margin-bottom: 1rem; border-bottom: 1px solid var(--rule); }
+.mp-nav { display: flex; gap: 0.35rem; }
+.mp-nav button {
+  border: 1px solid var(--rule); background: var(--raise); color: var(--ink); cursor: pointer; border-radius: 8px;
+  font: 700 1.05rem/1 var(--font-body); height: 34px; min-width: 34px; padding: 0 0.7rem;
+}
+.mp-nav .mp-today { font-size: 0.85rem; }
+.mp-nav button:hover { background: var(--rule); }
+.mp-range { font-size: 2rem; line-height: 1; margin: 0 0 0 auto; }
+.mp-loading { min-height: 420px; }
+
+.mp-scroll { overflow-x: auto; }
+.mp-grid { display: grid; grid-template-columns: 84px repeat(7, minmax(112px, 1fr)); gap: 6px; min-width: 900px; }
+
+.mp-dayhead {
+  display: flex; flex-direction: column; align-items: center; padding: 0.35rem 0; border-radius: 8px;
+  font-weight: 600; font-size: 0.75rem; color: var(--sub); text-transform: uppercase; letter-spacing: 0.08em;
+}
+.mp-dayhead b { font: 800 1.35rem/1.1 var(--font-head); color: var(--ink); letter-spacing: 0; }
+.mp-dayhead.past b { color: color-mix(in srgb, var(--sub) 70%, transparent); }
+.mp-dayhead.today { background: var(--cta); color: var(--on-cta); }
+.mp-dayhead.today b { color: var(--on-cta); }
+
+.mp-slotlabel { display: flex; align-items: center; font: 800 1rem var(--font-head); text-transform: uppercase; letter-spacing: 0.04em; color: var(--sub); }
+
+.mp-cell {
+  min-height: 96px; padding: 0.35rem; box-sizing: border-box; min-width: 0;
+  background: var(--bg); border: 1px solid var(--edge); border-radius: 8px;
+  display: flex; flex-direction: column; gap: 4px; transition: background 0.12s, border-color 0.12s;
+}
+.mp-cell.past { background: transparent; }
+.mp-cell.today { border: 2px solid var(--cta); background: color-mix(in srgb, var(--cta) 8%, var(--bg)); }
+.mp-cell.over { border: 1px dashed var(--cta); background: color-mix(in srgb, var(--cta) 14%, var(--bg)); }
+.mp-cell.armed { cursor: copy; }
+.mp-cell.armed:hover { border-color: var(--cta); }
+
+.mp-thumb { border-radius: 50%; object-fit: cover; flex-shrink: 0; display: block; }
+.mp-thumb--ph { display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.55); font-family: var(--font-head); font-weight: 800; text-transform: uppercase; }
+
+.mp-chip {
+  position: relative; display: flex; align-items: center; gap: 0.4rem; min-width: 0; cursor: grab;
+  background: var(--raise); color: var(--ink); border: 1px solid var(--rule); border-radius: 14px;
+  padding: 2px 22px 2px 2px; font: 600 0.74rem/1.15 var(--font-body);
+}
+.mp-chip:hover { border-color: var(--cta); }
+.mp-chip-text { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.mp-chip-x {
+  position: absolute; top: 50%; right: 3px; transform: translateY(-50%); width: 16px; height: 16px; padding: 0; cursor: pointer;
+  border-radius: 50%; display: grid; place-items: center; line-height: 1; font-size: 0.95rem;
+  background: transparent; color: var(--sub); border: none; opacity: 0; transition: opacity 0.12s;
+}
+.mp-chip:hover .mp-chip-x, .mp-chip-x:focus-visible { opacity: 1; }
+.mp-chip-x:hover { background: var(--warn); color: var(--bg); }
+
+/* recipe tray */
+.mp-box { position: sticky; top: 1rem; background: var(--paper); border: 1px solid var(--edge); border-radius: 12px; padding: 0.9rem 0.9rem 1rem; }
+.mp-box-title { font-size: 1.3rem; margin: 0 0 0.6rem; }
+.mp-box-search {
+  width: 100%; box-sizing: border-box; margin-bottom: 0.7rem; padding: 0.5rem 0.75rem; background: var(--bg); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 8px; font: 500 0.92rem var(--font-body);
+}
+.mp-box-search:focus { outline: 3px solid var(--cta); outline-offset: 1px; }
+.mp-box-hint { margin: 0 0 0.8rem; font-size: 0.8rem; color: var(--sub); }
+.mp-box-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9rem 0.4rem; justify-items: center; max-height: 420px; overflow-y: auto; padding: 6px 2px; }
+
+.mp-tile {
+  position: relative; width: 52px; height: 52px; border-radius: 50%; cursor: grab; user-select: none;
+  border: 2px solid var(--rule); box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.8); transition: transform 0.15s, border-color 0.15s;
+}
+.mp-tile .mp-thumb { width: 100%; height: 100%; }
+.mp-tile:hover { transform: scale(1.08); border-color: var(--cta); }
+.mp-tile:active { cursor: grabbing; }
+.mp-tile:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.mp-tile.armed { outline: 3px solid var(--cta); outline-offset: 3px; transform: scale(1.08); border-color: var(--cta); }
+.mp-tile::after {
+  content: attr(data-label); position: absolute; bottom: calc(100% + 8px); left: 50%; z-index: 20;
+  transform: translate(-50%, 4px); opacity: 0; pointer-events: none; white-space: nowrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis;
+  background: var(--ink); color: var(--bg); font: 700 0.8rem var(--font-body); padding: 0.3rem 0.7rem; border-radius: 6px;
+  transition: opacity 0.12s, transform 0.12s;
+}
+.mp-tile:hover::after, .mp-tile:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 760px) {
+  .mp-tabbar { padding: 1rem 1rem 0; }
+  .mp-wrap { padding: 1.2rem 1rem 4rem; }
+  .mp-body { grid-template-columns: 1fr; }
+  .mp-box { position: static; order: -1; }
+  .mp-range { margin-left: 0; width: 100%; font-size: 1.7rem; }
+}
+@media (prefers-reduced-motion: reduce) { .mp-tile, .mp-cell, .mp-tile::after, .mp-chip-x { transition: none; } .mp-tile:hover, .mp-tile.armed { transform: none; } }

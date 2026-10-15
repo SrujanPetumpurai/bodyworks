@@ -22,6 +22,6 @@ const foodOptions = foods.map((f) => ({ slug: f.slug, name: f.name }));
     />
   </head>
   <body>
-    <RecipesBrowser foods={foodOptions} recipes={recipes} client:load />
+    <RecipesBrowser foods={foodOptions} recipes={recipes} signedIn={!!Astro.locals.user} client:load />
   </body>
 </html>
