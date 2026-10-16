@@ -618,9 +618,8 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
         <nav className="rb-nav" aria-label="Main">
           <a href="/workouts" aria-current="page">Workouts</a>
           <a href="/recipes">Recipes</a>
-          <a href="/communities">Communities</a>
         </nav>
-        <AccountMenu />
+        <AccountMenu showAddRecipe={false} />
       </header>
 
       <div className="wk-container">

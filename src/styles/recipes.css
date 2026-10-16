@@ -372,3 +372,10 @@ html, body { margin: 0; background: #0f1210; }
   .mp-tabbar, .rb-container { padding-left: 1rem; padding-right: 1rem; }
 }
 @media (max-width: 460px) { .rb-grid { grid-template-columns: 1fr; } }
+
+.mp-clearday {
+  margin-top: 0.25rem; padding: 0.1rem 0.5rem; border: 1px solid var(--rule); border-radius: 999px; background: none;
+  color: var(--sub); font: 600 0.7rem var(--font-body); cursor: pointer;
+}
+.mp-clearday:hover { border-color: var(--warn); color: var(--warn); }
+.mp-dayhead.today .mp-clearday { border-color: color-mix(in srgb, var(--on-cta) 40%, transparent); color: var(--on-cta); }

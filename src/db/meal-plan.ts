@@ -96,6 +96,15 @@ export async function updateMeal(userId: string, id: number, changes: { date?: s
   return row ? getMeal(userId, row.id) : null;
 }
 
+// Removes every meal the user has planned on one day. Returns how many were removed.
+export async function clearDay(userId: string, date: string) {
+  const rows = await db
+    .delete(mealPlanEntries)
+    .where(and(eq(mealPlanEntries.userId, userId), eq(mealPlanEntries.date, date)))
+    .returning({ id: mealPlanEntries.id });
+  return rows.length;
+}
+
 export async function deleteMeal(userId: string, id: number) {
   const rows = await db
     .delete(mealPlanEntries)

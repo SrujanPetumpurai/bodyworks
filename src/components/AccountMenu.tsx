@@ -3,7 +3,7 @@ import { signOut, useSession } from "../lib/auth-client";
 import Avatar from "./recipes/Avatar";
 
 // Sign-in link when logged out; avatar dropdown when logged in.
-export default function AccountMenu({ light = true }: { light?: boolean }) {
+export default function AccountMenu({ light = true, showAddRecipe = true }: { light?: boolean; showAddRecipe?: boolean }) {
   const { data: session, isPending } = useSession();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -36,7 +36,7 @@ export default function AccountMenu({ light = true }: { light?: boolean }) {
   const u = session.user;
   return (
     <div className={`rb-account ${light ? "light" : ""}`} ref={ref}>
-      <a className="rb-btn rb-btn-solid" href="/recipes/new">+ Add recipe</a>
+      {showAddRecipe && <a className="rb-btn rb-btn-solid" href="/recipes/new">+ Add recipe</a>}
       <button
         type="button"
         className="rb-account-btn"
@@ -52,7 +52,7 @@ export default function AccountMenu({ light = true }: { light?: boolean }) {
           <p className="rb-menu-name">{u.name}</p>
           <a role="menuitem" href={`/profile/${u.id}`}>My profile</a>
           <a role="menuitem" href={`/profile/${u.id}?tab=recipes`}>My recipes</a>
-          <a role="menuitem" href="/recipes/new">Add recipe</a>
+          {showAddRecipe && <a role="menuitem" href="/recipes/new">Add recipe</a>}
           <button
             type="button"
             role="menuitem"

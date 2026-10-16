@@ -228,7 +228,6 @@ export default function RecipesBrowser({
         <nav className="rb-nav" aria-label="Main">
           <a href="/workouts">Workouts</a>
           <a href="/recipes" aria-current="page">Recipes</a>
-          <a href="/communities">Communities</a>
         </nav>
         <AccountMenu />
       </header>
@@ -251,6 +250,7 @@ export default function RecipesBrowser({
         </div>
 
         <div className="mp-tabbar-actions">
+          {view === "discover" && <a className="rb-btn" href="/communities">Communities</a>}
           {signedIn && <a className="rb-btn" href="/recipes/new">+ Add recipe</a>}
           <button type="button" className="rb-btn rb-filter-btn" onClick={() => setFiltersOpen(true)} aria-haspopup="dialog">
             Filters{activeFilters > 0 && <span className="rb-filter-count">{activeFilters}</span>}

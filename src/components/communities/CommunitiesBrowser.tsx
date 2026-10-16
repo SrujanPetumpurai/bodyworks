@@ -63,8 +63,7 @@ export default function CommunitiesBrowser({
         <a href="/" className="rb-wordmark">bodyworks</a>
         <nav className="rb-nav" aria-label="Main">
           <a href="/workouts">Workouts</a>
-          <a href="/recipes">Recipes</a>
-          <a href="/communities" aria-current="page">Communities</a>
+          <a href="/recipes" aria-current="page">Recipes</a>
         </nav>
         <AccountMenu />
       </header>

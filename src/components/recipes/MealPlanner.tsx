@@ -199,6 +199,20 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
     }
   }
 
+  async function clearDay(date: string, label: string) {
+    const removed = meals.filter((m) => m.date === date);
+    if (removed.length === 0) return;
+    if (!confirm(`Remove all ${removed.length} planned ${removed.length === 1 ? "meal" : "meals"} on ${label}?`)) return;
+    setMeals((ms) => ms.filter((m) => m.date !== date));
+    try {
+      const res = await fetch(`/api/meal-plan?date=${date}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+    } catch {
+      setMeals((ms) => [...ms, ...removed]);
+      setError("Couldn't clear that day.");
+    }
+  }
+
   /* ----- placing things ----- */
   function place(slug: string, date: string, slot: Slot) {
     if (!signedIn) return setError("Sign in to plan meals.");
@@ -328,6 +342,16 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
                   >
                     <span>{d.dow}</span>
                     <b>{d.day}</b>
+                    {meals.some((m) => m.date === d.key) && (
+                      <button
+                        type="button"
+                        className="mp-clearday"
+                        onClick={() => clearDay(d.key, `${d.dow} ${d.day}`)}
+                        aria-label={`Clear all meals on ${d.dow} ${d.day}`}
+                      >
+                        Clear day
+                      </button>
+                    )}
                   </div>
                 ))}
 
