@@ -617,7 +617,6 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
         <a href="/" className="rb-wordmark">bodyworks</a>
         <nav className="rb-nav" aria-label="Main">
           <a href="/workouts" aria-current="page">Workouts</a>
-          <a href="/daily-requirements">Daily needs</a>
           <a href="/recipes">Recipes</a>
           <a href="/communities">Communities</a>
         </nav>

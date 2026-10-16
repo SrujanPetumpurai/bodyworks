@@ -24,6 +24,7 @@ const initial = {
   difficulty: recipe.difficulty ?? "",
   imageUrl: recipe.imageUrl,
   videoUrl: recipe.videoUrl ?? "",
+  voiceNoteUrl: recipe.voiceNoteUrl,
   ingredients: recipe.ingredients.map((i) => ({
     name: i.food.name,
     amount: String(Number(i.amount)),

@@ -1,7 +1,18 @@
 import Avatar, { TONES, hash } from "./Avatar";
 import type { RecipeSummary } from "./RecipesBrowser";
 
-export default function RecipeCard({ recipe, onClick }: { recipe: RecipeSummary; onClick: () => void }) {
+export default function RecipeCard({
+  recipe,
+  onClick,
+  saveState,
+  onToggleSave,
+}: {
+  recipe: RecipeSummary;
+  onClick: () => void;
+  // undefined = no bookmark (own recipe or signed out)
+  saveState?: "saved" | "unsaved";
+  onToggleSave?: () => void;
+}) {
   const filled = Math.round(recipe.avgRating);
 
   return (
@@ -31,6 +42,23 @@ export default function RecipeCard({ recipe, onClick }: { recipe: RecipeSummary;
         )}
 
         {recipe.cuisine && <span className="rb-card-cuisine">{recipe.cuisine}</span>}
+
+        {saveState && onToggleSave && (
+          <button
+            type="button"
+            className={`rb-save ${saveState === "saved" ? "on" : ""}`}
+            aria-pressed={saveState === "saved"}
+            aria-label={saveState === "saved" ? `Remove ${recipe.name} from saved` : `Save ${recipe.name}`}
+            title={saveState === "saved" ? "Saved — click to remove" : "Save to my recipes"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSave();
+            }}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            {saveState === "saved" ? "★" : "☆"}
+          </button>
+        )}
       </div>
 
       <div className="rb-card-body">

@@ -33,28 +33,66 @@ const RATING_OPTIONS = [
   { label: "4★ & up", value: 4 },
 ];
 
-type Tab = "browse" | "plan";
+type Tab = "mine" | "browse" | "plan";
+type MineView = "created" | "saved";
 
 export default function RecipesBrowser({
   foods,
   recipes,
   signedIn,
+  userId,
+  savedSlugs,
 }: {
   foods: Food[];
   recipes: RecipeSummary[];
   signedIn: boolean;
+  userId: string | null;
+  savedSlugs: string[];
 }) {
-  const [tab, setTab] = useState<Tab>("browse");
+  // signed-in users land on their own recipes; visitors have none, so they land on Discover
+  const [tab, setTab] = useState<Tab>(signedIn ? "mine" : "browse");
+  const [mineView, setMineView] = useState<MineView>("created");
+  const [saved, setSaved] = useState<Set<string>>(() => new Set(savedSlugs));
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  // /recipes#plan opens the meal plan directly (read after mount so server and client render match)
+  // deep links: /recipes#plan and /recipes#discover (read after mount so server and client render match)
   useEffect(() => {
     if (location.hash === "#plan") setTab("plan");
+    else if (location.hash === "#discover") setTab("browse");
   }, []);
 
   function switchTab(next: Tab) {
     setTab(next);
-    history.replaceState(null, "", next === "plan" ? "#plan" : location.pathname + location.search);
+    const hash = next === "plan" ? "#plan" : next === "browse" && signedIn ? "#discover" : "";
+    history.replaceState(null, "", location.pathname + location.search + hash);
   }
+
+  function onSavedChange(slug: string, isSaved: boolean) {
+    setSaved((prev) => {
+      const next = new Set(prev);
+      if (isSaved) next.add(slug);
+      else next.delete(slug);
+      return next;
+    });
+  }
+
+  async function toggleSave(slug: string) {
+    const next = !saved.has(slug);
+    setSaveError(null);
+    const res = await fetch(`/api/recipes/${slug}/save`, { method: next ? "POST" : "DELETE" }).catch(() => null);
+    if (!res || !res.ok) return setSaveError("Couldn't update your saved recipes.");
+    onSavedChange(slug, next);
+  }
+
+  const mine = useMemo(() => recipes.filter((r) => userId && r.authorId === userId), [recipes, userId]);
+  const savedList = useMemo(() => recipes.filter((r) => saved.has(r.slug)), [recipes, saved]);
+  // what the meal plan can draw from: everything the user wrote or saved
+  const plannable = useMemo(() => {
+    const seen = new Set<string>();
+    return [...mine, ...savedList].filter((r) => !seen.has(r.slug) && !!seen.add(r.slug));
+  }, [mine, savedList]);
+
+  const base = tab === "mine" ? (mineView === "created" ? mine : savedList) : recipes;
 
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
@@ -76,14 +114,14 @@ export default function RecipesBrowser({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return recipes.filter((r) => {
+    return base.filter((r) => {
       if (q && !r.name.toLowerCase().includes(q) && !r.description.toLowerCase().includes(q)) return false;
       if (selected.length && !selected.every((s) => r.ingredientSlugs.includes(s))) return false;
       if (authorId !== "all" && r.authorId !== authorId) return false;
       if (minRating && r.avgRating < minRating) return false;
       return true;
     });
-  }, [recipes, query, selected, authorId, minRating]);
+  }, [base, query, selected, authorId, minRating]);
 
   const available = foods.filter((f) => !selected.includes(f.slug));
 
@@ -132,7 +170,6 @@ export default function RecipesBrowser({
         <a href="/" className="rb-wordmark">bodyworks</a>
         <nav className="rb-nav" aria-label="Main">
           <a href="/workouts">Workouts</a>
-          <a href="/daily-requirements">Daily needs</a>
           <a href="/recipes" aria-current="page">Recipes</a>
           <a href="/communities">Communities</a>
         </nav>
@@ -141,8 +178,13 @@ export default function RecipesBrowser({
 
       <div className="mp-tabbar">
         <div className="mp-tabs" role="tablist" aria-label="Recipes sections">
+          {signedIn && (
+            <button type="button" role="tab" aria-selected={tab === "mine"} className={tab === "mine" ? "on" : ""} onClick={() => switchTab("mine")}>
+              My recipes
+            </button>
+          )}
           <button type="button" role="tab" aria-selected={tab === "browse"} className={tab === "browse" ? "on" : ""} onClick={() => switchTab("browse")}>
-            Browse
+            Discover
           </button>
           <button type="button" role="tab" aria-selected={tab === "plan"} className={tab === "plan" ? "on" : ""} onClick={() => switchTab("plan")}>
             Meal plan
@@ -151,12 +193,26 @@ export default function RecipesBrowser({
       </div>
 
       {tab === "plan" ? (
-        <MealPlanner recipes={recipes} signedIn={signedIn} />
+        <MealPlanner recipes={plannable} signedIn={signedIn} />
       ) : (
         <>
       <section className="rb-hero">
-        <h1 className="rb-title">Recipes</h1>
-        <p className="rb-lede">High-protein meals. Add what you have and see what you can cook.</p>
+        <h1 className="rb-title">{tab === "mine" ? "My recipes" : "Discover"}</h1>
+        <p className="rb-lede">
+          {tab === "mine"
+            ? "Everything you've written or saved. Saved recipes show up in your meal plan too."
+            : "High-protein meals from other cooks. Save the ones you like to plan with them."}
+        </p>
+        {tab === "mine" && (
+          <div className="rb-subtabs" role="group" aria-label="Which recipes">
+            <button type="button" className={mineView === "created" ? "on" : ""} onClick={() => setMineView("created")}>
+              Created by me ({mine.length})
+            </button>
+            <button type="button" className={mineView === "saved" ? "on" : ""} onClick={() => setMineView("saved")}>
+              Saved ({savedList.length})
+            </button>
+          </div>
+        )}
 
         <div className="rb-controls">
           <div>
@@ -237,26 +293,30 @@ export default function RecipesBrowser({
           <aside className="rb-filter">
             <h2>Filter</h2>
 
-            <h3>Profile</h3>
-            <button
-              type="button"
-              className={`rb-profile ${authorId === "all" ? "on" : ""}`}
-              onClick={() => setAuthorId("all")}
-            >
-              <span className="rb-profile-all">All</span>
-              Everyone
-            </button>
-            {authors.map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                className={`rb-profile ${authorId === a.id ? "on" : ""}`}
-                onClick={() => setAuthorId(authorId === a.id ? "all" : a.id)}
-              >
-                <Avatar name={a.name} image={a.image} size={28} />
-                {a.name}
-              </button>
-            ))}
+            {!(tab === "mine" && mineView === "created") && (
+              <>
+                <h3>Profile</h3>
+                <button
+                  type="button"
+                  className={`rb-profile ${authorId === "all" ? "on" : ""}`}
+                  onClick={() => setAuthorId("all")}
+                >
+                  <span className="rb-profile-all">All</span>
+                  Everyone
+                </button>
+                {authors.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    className={`rb-profile ${authorId === a.id ? "on" : ""}`}
+                    onClick={() => setAuthorId(authorId === a.id ? "all" : a.id)}
+                  >
+                    <Avatar name={a.name} image={a.image} size={28} />
+                    {a.name}
+                  </button>
+                ))}
+              </>
+            )}
 
             <h3>Rating</h3>
             {RATING_OPTIONS.map((o) => (
@@ -275,13 +335,31 @@ export default function RecipesBrowser({
           <section>
             <div className="rb-results-head">
               <span>{filtered.length} {filtered.length === 1 ? "recipe" : "recipes"}</span>
+              {tab === "mine" && <a className="rb-btn rb-btn-solid" href="/recipes/new">+ Add recipe</a>}
             </div>
+            {saveError && <p className="rb-msg" role="alert">{saveError}</p>}
             {filtered.length === 0 ? (
-              <p className="rb-empty">No recipes match. Try removing a filter.</p>
+              base.length === 0 && tab === "mine" ? (
+                <p className="rb-empty">
+                  {mineView === "created" ? (
+                    <>You haven't added any recipes yet. <a href="/recipes/new">Add your first one</a> or <button type="button" className="rb-linkbtn" onClick={() => switchTab("browse")}>discover recipes from others</button>.</>
+                  ) : (
+                    <>Nothing saved yet. <button type="button" className="rb-linkbtn" onClick={() => switchTab("browse")}>Discover recipes</button> and tap the bookmark on the ones you like.</>
+                  )}
+                </p>
+              ) : (
+                <p className="rb-empty">No recipes match. Try removing a filter.</p>
+              )
             ) : (
               <div className="rb-grid">
                 {filtered.map((r) => (
-                  <RecipeCard key={r.slug} recipe={r} onClick={() => setActiveSlug(r.slug)} />
+                  <RecipeCard
+                    key={r.slug}
+                    recipe={r}
+                    onClick={() => setActiveSlug(r.slug)}
+                    saveState={signedIn && r.authorId !== userId ? (saved.has(r.slug) ? "saved" : "unsaved") : undefined}
+                    onToggleSave={() => toggleSave(r.slug)}
+                  />
                 ))}
               </div>
             )}
@@ -289,7 +367,14 @@ export default function RecipesBrowser({
         </div>
       </div>
 
-      {activeSlug && <RecipeModal slug={activeSlug} onClose={() => setActiveSlug(null)} />}
+      {activeSlug && (
+        <RecipeModal
+          slug={activeSlug}
+          onClose={() => setActiveSlug(null)}
+          saved={saved.has(activeSlug)}
+          onSavedChange={onSavedChange}
+        />
+      )}
         </>
       )}
     </div>

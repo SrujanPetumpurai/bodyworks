@@ -371,7 +371,7 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
           />
           <p className="mp-box-hint">Drag onto a slot, or tap one then tap a slot.</p>
           {recipes.length === 0 ? (
-            <p className="mp-box-hint">No recipes yet. <a href="/recipes/new">Add one</a>.</p>
+            <p className="mp-box-hint">Nothing to plan with yet. <a href="/recipes/new">Add a recipe</a> or save some from <a href="/recipes#discover">Discover</a>.</p>
           ) : shelf.length === 0 ? (
             <p className="mp-box-hint">No recipes match.</p>
           ) : (

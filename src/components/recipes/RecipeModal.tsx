@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useSession } from "../../lib/auth-client";
+import CookLog from "./CookLog";
 
 type Detail = {
   name: string;
   description: string;
   videoUrl: string | null;
+  voiceNoteUrl: string | null;
   externalUrl: string | null;
   prepTimeMinutes: number | null;
   difficulty: string | null;
@@ -16,9 +18,20 @@ type Detail = {
   steps: { id: number; stepNumber: number; instruction: string }[];
 };
 
-const PAGES = ["Ingredients", "Steps", "Rate"] as const;
+const PAGES = ["Ingredients", "Steps", "Cook log", "Rate"] as const;
 
-export default function RecipeModal({ slug, onClose }: { slug: string; onClose: () => void }) {
+export default function RecipeModal({
+  slug,
+  onClose,
+  saved,
+  onSavedChange,
+}: {
+  slug: string;
+  onClose: () => void;
+  // only passed where saving makes sense (the recipes page); omitted in the meal planner
+  saved?: boolean;
+  onSavedChange?: (slug: string, saved: boolean) => void;
+}) {
   const { data: session } = useSession();
   const [recipe, setRecipe] = useState<Detail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +63,8 @@ export default function RecipeModal({ slug, onClose }: { slug: string; onClose: 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
       if (e.key === "ArrowRight") setPage((p) => Math.min(p + 1, PAGES.length - 1));
       if (e.key === "ArrowLeft") setPage((p) => Math.max(p - 1, 0));
     };
@@ -70,6 +85,15 @@ export default function RecipeModal({ slug, onClose }: { slug: string; onClose: 
     setAvg(r.avgRating);
     setCount(r.ratingCount);
     setMsg("Thanks for rating!");
+  }
+
+  async function toggleSave() {
+    if (!onSavedChange) return;
+    const next = !saved;
+    setMsg(null);
+    const res = await fetch(`/api/recipes/${slug}/save`, { method: next ? "POST" : "DELETE" }).catch(() => null);
+    if (!res || !res.ok) return setMsg("Couldn't update your saved recipes.");
+    onSavedChange(slug, next);
   }
 
   async function removeRecipe() {
@@ -120,13 +144,26 @@ export default function RecipeModal({ slug, onClose }: { slug: string; onClose: 
                 </ol>
               )}
 
-              {page === 2 && (
+              {page === 2 && <CookLog slug={slug} signedIn={!!session} />}
+
+              {page === 3 && (
                 <div className="rb-rate">
                   <p>{recipe.description}</p>
+                  {recipe.voiceNoteUrl && (
+                    <audio className="vr-player" controls preload="none" src={recipe.voiceNoteUrl} />
+                  )}
                   {recipe.difficulty && <p className="rb-muted">Difficulty: {recipe.difficulty}</p>}
                   {recipe.author && <p className="rb-muted">
                       by <a className="rb-author-name" href={`/profile/${recipe.author.id}`}>{recipe.author.name}</a>
                     </p>}
+
+                  {session && recipe.author && session.user.id !== recipe.author.id && onSavedChange && (
+                    <div className="rb-links">
+                      <button type="button" className="rb-btn" onClick={toggleSave}>
+                        {saved ? "✓ Saved — remove" : "+ Save to my recipes"}
+                      </button>
+                    </div>
+                  )}
 
                   {session && recipe.author && session.user.id === recipe.author.id && (
                     <div className="rb-links">

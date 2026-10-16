@@ -166,6 +166,7 @@ export type RecipeInput = {
   description: string;
   imageUrl: string | null;
   videoUrl: string | null;
+  voiceNoteUrl: string | null;
   cuisine: string | null;
   prepTimeMinutes: number | null;
   servings: number | null;
@@ -238,6 +239,7 @@ export async function createRecipe(authorId: string, input: RecipeInput, placeme
       description: input.description,
       imageUrl: input.imageUrl,
       videoUrl: input.videoUrl,
+      voiceNoteUrl: input.voiceNoteUrl,
       cuisine: input.cuisine,
       prepTimeMinutes: input.prepTimeMinutes,
       servings: input.servings,
@@ -282,6 +284,7 @@ export async function updateRecipe(slug: string, authorId: string, input: Recipe
         description: input.description,
         imageUrl: input.imageUrl,
         videoUrl: input.videoUrl,
+        voiceNoteUrl: input.voiceNoteUrl,
         cuisine: input.cuisine,
         prepTimeMinutes: input.prepTimeMinutes,
         servings: input.servings,

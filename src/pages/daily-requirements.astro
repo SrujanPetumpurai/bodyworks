@@ -1,8 +1,11 @@
 ---
-export const prerender = true;
+export const prerender = false;
 import AccountMenu from "../components/AccountMenu";
 import "../styles/recipes.css";
 import "../styles/forms.css";
+// Page is hidden for now: send everyone home. Delete this line (and set prerender back to true) to restore it.
+return Astro.redirect("/");
+
 const bodyTypes = [
   { id: "male", label: "Male" },
   { id: "female", label: "Female" },

@@ -323,3 +323,19 @@ html, body { margin: 0; background: #0f1210; }
   .mp-range { margin-left: 0; width: 100%; font-size: 1.7rem; }
 }
 @media (prefers-reduced-motion: reduce) { .mp-tile, .mp-cell, .mp-tile::after, .mp-chip-x { transition: none; } .mp-tile:hover, .mp-tile.armed { transform: none; } }
+
+/* ---------- my recipes / discover ---------- */
+.rb-subtabs { display: inline-flex; gap: 0.4rem; margin: 0.6rem 0 0.2rem; }
+.rb-subtabs button {
+  padding: 0.4rem 0.9rem; border-radius: 999px; border: 1px solid var(--rule); background: none;
+  color: var(--sub); font: 600 0.9rem var(--font-body); cursor: pointer;
+}
+.rb-subtabs button.on { background: var(--cta); border-color: var(--cta); color: var(--on-cta); }
+.rb-linkbtn { background: none; border: none; padding: 0; color: var(--cta); font: inherit; text-decoration: underline; cursor: pointer; }
+.rb-save {
+  position: absolute; top: 0.6rem; left: 0.6rem; width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--rule); background: rgba(15, 18, 16, 0.8); color: var(--ink);
+  font-size: 1.2rem; line-height: 1; cursor: pointer; display: grid; place-items: center;
+}
+.rb-save:hover { border-color: var(--cta); color: var(--cta); }
+.rb-save.on { background: var(--cta); border-color: var(--cta); color: var(--on-cta); }

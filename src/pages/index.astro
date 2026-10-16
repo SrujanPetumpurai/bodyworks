@@ -17,6 +17,7 @@ const panels = [
     desc: "See how much protein, water, calories and sleep your body needs each day, based on your goal.",
     cta: "Check my numbers",
     href: "/daily-requirements",
+    hidden: true, // page is switched off for now; remove this flag (and the redirect in daily-requirements.astro) to bring it back
     image: "/dailyRequirements/nutrients_nobg.png",
     alt: "Illustrated vitamins, fruit, greens and other nutrients",
   },
@@ -30,6 +31,8 @@ const panels = [
     alt: "Illustrated high-protein meals",
   },
 ];
+
+const visiblePanels = panels.filter((p) => !p.hidden);
 ---
 
 <!doctype html>
@@ -52,7 +55,7 @@ const panels = [
     </div>
     <main class="panels">
       {
-        panels.map((p, i) => (
+        visiblePanels.map((p, i) => (
           <a class={`panel panel--${p.id}`} href={p.href} style={`--i:${i}`}>
             <div class="copy">
               <h2>{p.title}</h2>
@@ -133,19 +136,15 @@ const panels = [
 
   .panels {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     grid-template-rows: var(--logo-h) 1fr;
     gap: var(--gap);
     padding: var(--gap);
     height: 100dvh;
   }
 
-  /* outer panels run the full height; only the middle one is shortened */
-  .panel--workouts,
-  .panel--recipes {
-    grid-row: 1 / span 2;
-  }
-  .panel--daily {
+  /* panels sit below the logo row */
+  .panel {
     grid-row: 2;
   }
 

@@ -50,6 +50,13 @@
       "when": 1792069837565,
       "tag": "0006_meal_plan",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792127896897,
+      "tag": "0007_cook_logs_saved_recipes",
+      "breakpoints": true
     }
   ]
 }
