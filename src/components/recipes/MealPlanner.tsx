@@ -290,8 +290,8 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
 
   return (
     <div className="mp-wrap">
-      <h1 className="rb-title">Meal plan</h1>
-      <p className="rb-lede">Drag a recipe onto a day and meal. Click a planned recipe to open it.</p>
+      <h2 className="mp-section-title">Meal plan</h2>
+      <p className="rb-hint">Drag a recipe onto a day and meal. Click a planned recipe to open it.</p>
 
       {!signedIn && (
         <p className="mp-banner">
