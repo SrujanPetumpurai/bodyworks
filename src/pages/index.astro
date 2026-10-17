@@ -1,24 +1,9 @@
 ---
 export const prerender = false;
-import { CalendarDays, NotebookPen, Repeat, UtensilsCrossed } from "lucide-react";
 import AccountMenu from "../components/AccountMenu";
 import "../styles/recipes.css";
 import "../styles/forms.css";
 import "../styles/landing.css";
-
-// People who are signed in already know the site: skip straight to their recipes.
-if (Astro.locals.user) return Astro.redirect("/recipes");
-
-const panels = [
-  { title: "Workouts", points: ["Schedule by day and time", "Repeat on a weekly pattern", "Mark sessions as done"] },
-  { title: "Recipes", points: ["Your recipes, plus ones you save", "Drag them into a weekly meal plan", "Photos and voice notes each time you cook"] },
-];
-const badges = [
-  { label: "Schedule", Icon: CalendarDays },
-  { label: "Repeat", Icon: Repeat },
-  { label: "Meal plan", Icon: UtensilsCrossed },
-  { label: "Cook log", Icon: NotebookPen },
-];
 ---
 
 <!doctype html>
@@ -26,8 +11,9 @@ const badges = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Train, fuel, repeat — bodyworks</title>
-    <meta name="description" content="Plan your workouts on a calendar, keep your recipes, and plan your meals for the week." />
+    <title>Bodyworks — same goal, two ways</title>
+    <meta name="description" content="Plan your workouts, save recipes, and build a healthier routine with Bodyworks." />
+    <meta name="theme-color" content="#100e0b" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -36,57 +22,94 @@ const badges = [
     />
   </head>
   <body>
-    <div class="rb-page lp">   
-      <div class="lp-background" aria-hidden="true">
-        <div class="lp-background__half lp-background__half--kitchen"></div>
-        <div class="lp-background__half lp-background__half--workout"></div>
-        <div class="lp-background__overlay"></div>
+    <div class="rb-page lp">
+      <div class="lp-atmosphere" aria-hidden="true">
+        <div class="lp-atmosphere__photo lp-atmosphere__photo--gym"></div>
+        <div class="lp-atmosphere__photo lp-atmosphere__photo--kitchen"></div>
+        <div class="lp-atmosphere__shade"></div>
+        <div class="lp-grain"></div>
       </div>
+
       <header class="lp-top">
-        <a href="/" class="lp-wordmark">bodyworks</a>
-        <AccountMenu showThemeToggle={false} client:load />
+        <a href="/" class="lp-wordmark" aria-label="Bodyworks home">BODYWORKS<span>.</span></a>
+        <div class="lp-top-right">
+          <span class="lp-top-note">Train with intent. Eat with joy.</span>
+          <AccountMenu showThemeToggle={false} client:load />
+        </div>
       </header>
 
-      <main class="lp-stage">
-        <section class="lp-visual" aria-hidden="false">
- <img class="lp-pan-img" src="/public/cooking_drawing.jpg" alt="Illustrated pan of high-protein food" />
+      <main class="lp-main">
+        <section class="lp-heading" aria-labelledby="lp-title">
+          <p class="lp-eyebrow"><span></span> YOUR ROUTINE STARTS HERE <span></span></p>
+          <h1 id="lp-title">SAME GOAL.<br /><em>TWO WAYS.</em></h1>
+          <p class="lp-subtitle">Train harder. Eat better. Build a healthier you.</p>
         </section>
 
-        <section class="lp-info">
-          <h1>Train.<br />Fuel.<br />Repeat.</h1>
-          <p class="lp-tag">Plan the week. Log the work.</p>
+        <section class="lp-choices" aria-label="Choose your Bodyworks space">
+          <a class="lp-choice lp-choice--workouts" href="/workouts" aria-label="Enter Workouts">
+            <div class="lp-choice-photo" aria-hidden="true"></div>
+            <div class="lp-choice-tint" aria-hidden="true"></div>
+            <div class="lp-card-grid" aria-hidden="true"></div>
+            <div class="lp-card-particles lp-card-particles--gym" aria-hidden="true"></div>
 
-          <div class="lp-panels">
-            {
-              panels.map((p) => (
-                <div class="lp-panel">
-                  <h2>{p.title}</h2>
-                  <ul>
-                    {p.points.map((pt) => (
-                      <li>{pt}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))
-            }
-          </div>
+            <div class="lp-choice-meta">
+              <span>01 <i>/</i> MOVE</span>
+              <span class="lp-choice-orbit" aria-hidden="true">↗</span>
+            </div>
 
-          <ul class="lp-badges" aria-label="Features">
-            {
-              badges.map(({ label, Icon }) => (
-                <li>
-                  <Icon size={22} strokeWidth={1.6} aria-hidden="true" />
-                  <span>{label}</span>
-                </li>
-              ))
-            }
-          </ul>
+            <div class="lp-choice-body">
+              <span class="lp-choice-icon lp-choice-icon--gym" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none"><path d="M8 17v14M14 12v24M34 12v24M40 17v14M14 24h20M4 20v8M44 20v8" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <p class="lp-choice-kicker">BUILD YOUR ROUTINE</p>
+              <h2>WORK<br />OUTS<span>.</span></h2>
+              <p class="lp-choice-description">Plan your sessions. Build consistency. Track every rep.</p>
+              <ul class="lp-mini-list" aria-label="Workout features">
+                <li>Plan</li><li>Execute</li><li>Track</li><li>Repeat</li>
+              </ul>
+              <span class="lp-choice-action">ENTER WORKOUTS <b aria-hidden="true">⟶</b></span>
+            </div>
 
-          <div class="lp-ctas">
-            <a class="lp-cta lp-cta--main" href="/recipes">Open recipes <span aria-hidden="true">→</span></a>
-            <a class="lp-cta lp-cta--alt" href="/workouts">Open workouts <span aria-hidden="true">→</span></a>
-          </div>
+            <span class="lp-card-stamp" aria-hidden="true">BODYWORKS <b>01</b></span>
+            <span class="lp-card-corner lp-card-corner--one" aria-hidden="true"></span>
+            <span class="lp-card-corner lp-card-corner--two" aria-hidden="true"></span>
+          </a>
+
+          <a class="lp-choice lp-choice--recipes" href="/recipes" aria-label="Explore Recipes">
+            <div class="lp-choice-photo" aria-hidden="true"></div>
+            <div class="lp-choice-tint" aria-hidden="true"></div>
+            <div class="lp-card-grid" aria-hidden="true"></div>
+            <div class="lp-card-particles lp-card-particles--food" aria-hidden="true"></div>
+
+            <div class="lp-choice-meta">
+              <span>02 <i>/</i> FUEL</span>
+              <span class="lp-choice-orbit" aria-hidden="true">↗</span>
+            </div>
+
+            <div class="lp-choice-body">
+              <span class="lp-choice-icon lp-choice-icon--food" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none"><path d="M24 7v5M13 11l3 4M35 11l-3 4M10 24a14 14 0 0 1 28 0c0 8-6 14-14 14S10 32 10 24Z" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M16 26c3-4 5 4 8 0s5 4 8 0" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+              </span>
+              <p class="lp-choice-kicker">MAKE GOOD FOOD HAPPEN</p>
+              <h2>RECI<br />PES<span>.</span></h2>
+              <p class="lp-choice-description">Save what you love. Plan your meals. Keep your kitchen notes.</p>
+              <ul class="lp-mini-list" aria-label="Recipe features">
+                <li>Discover</li><li>Save</li><li>Plan</li><li>Cook</li>
+              </ul>
+              <span class="lp-choice-action">EXPLORE RECIPES <b aria-hidden="true">⟶</b></span>
+            </div>
+
+            <span class="lp-card-stamp" aria-hidden="true">BODYWORKS <b>02</b></span>
+            <span class="lp-card-corner lp-card-corner--one" aria-hidden="true"></span>
+            <span class="lp-card-corner lp-card-corner--two" aria-hidden="true"></span>
+          </a>
         </section>
+
+        <footer class="lp-footer">
+          <span>MOVE WITH PURPOSE.</span>
+          <span class="lp-footer-mark"><i></i> TWO SIDES OF A BETTER ROUTINE <i></i></span>
+          <span>FUEL YOUR EVERYDAY.</span>
+        </footer>
       </main>
     </div>
   </body>
