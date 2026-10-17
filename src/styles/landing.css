@@ -1,0 +1,48 @@
+/* Landing page: a short explainer in the same light/dark theme as the rest of the site.
+   Colours all come from the .rb-page tokens in recipes.css. */
+
+.lp-spacer { flex: 1; }
+
+.lp-main { max-width: 1040px; margin: 0 auto; padding: 3.5rem 2rem 4rem; box-sizing: border-box; }
+
+.lp-hero { text-align: center; max-width: 640px; margin: 0 auto 2.8rem; }
+.lp-hero h1 { font-size: clamp(2.4rem, 6vw, 3.8rem); line-height: 1.05; margin: 0 0 0.9rem; }
+.lp-hero p { margin: 0; font-size: 1.1rem; line-height: 1.55; color: var(--sub); }
+
+.lp-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.6rem; }
+
+.rb-page .lp-card {
+  display: flex; flex-direction: column; color: var(--ink); text-decoration: none; overflow: hidden;
+  background: var(--paper); border: 1px solid var(--edge); border-radius: 28px; padding: 10px; box-shadow: var(--shadow);
+  transition: transform 0.18s, border-color 0.18s;
+}
+.lp-card:hover { transform: translateY(-4px); border-color: var(--cta); }
+
+/* soft tinted stage behind each illustration (same pastel as the planner's meal slots) */
+.lp-media {
+  height: 260px; border-radius: 20px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  background: color-mix(in srgb, var(--stage) var(--slot-mix), var(--paper));
+}
+.lp-card--workouts { --stage: var(--slot-s); }
+.lp-card--recipes  { --stage: var(--slot-l); }
+.lp-media img { max-width: 80%; max-height: 88%; object-fit: contain; display: block; }
+
+.lp-body { display: flex; flex-direction: column; flex: 1; padding: 1.3rem 1.2rem 1.2rem; }
+.lp-body h2 { font-size: 1.6rem; margin: 0 0 0.3rem; }
+.lp-lede { margin: 0 0 1rem; color: var(--sub); line-height: 1.5; }
+
+.lp-body ul { list-style: none; margin: 0 0 1.4rem; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.lp-body li { position: relative; padding-left: 1.6rem; line-height: 1.4; font-size: 0.95rem; }
+.lp-body li::before {
+  content: "✓"; position: absolute; left: 0; top: 0; color: var(--cta); font-weight: 800;
+}
+
+.lp-cta { margin-top: auto; align-self: flex-start; padding: 0.7rem 1.4rem; }
+.lp-card:hover .lp-cta { background: var(--cta-hover); border-color: var(--cta-hover); }
+
+@media (max-width: 760px) {
+  .lp-main { padding: 2rem 1rem 3rem; }
+  .lp-cards { grid-template-columns: 1fr; }
+  .lp-media { height: 210px; }
+}
+@media (prefers-reduced-motion: reduce) { .lp-card { transition: none; } .lp-card:hover { transform: none; } }
