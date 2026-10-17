@@ -24,6 +24,57 @@ html:has(.lp) { background: #15110e; }
     #15110e;
 }
 
+/* Split photographic background */
+.rb-page.lp {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+}
+
+.lp-background {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.lp-background__half {
+  min-width: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: saturate(0.72) sepia(0.2) brightness(0.65);
+}
+
+.lp-background__half--kitchen {
+  background-image: url("/kitchen.jpg");
+}
+
+.lp-background__half--workout {
+  background-image: url("/workout.jpg");
+}
+
+.lp-background__overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(21, 17, 14, 0.42),
+      rgba(21, 17, 14, 0.62)
+    );
+}
+
+/* Keep the landing card above the images */
+.lp-top,
+.lp-stage {
+  position: relative;
+  z-index: 1;
+}
+
 .lp-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 2rem; max-width: 1240px; margin: 0 auto; box-sizing: border-box; }
 .rb-page .lp-wordmark { font: 400 1.6rem/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); text-decoration: none; }
 
