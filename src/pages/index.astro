@@ -4,6 +4,13 @@ import AccountMenu from "../components/AccountMenu";
 import "../styles/recipes.css";
 import "../styles/forms.css";
 import "../styles/landing.css";
+
+// split headline into letters so each one can animate on its own
+const letters = (text: string, from = 0) =>
+  [...text].map((ch, i) => ({ ch: ch === " " ? " " : ch, n: from + i }));
+const lineOne = letters("SAME GOAL.");
+const lineTwo = letters("TWO WAYS.", lineOne.length);
+const ticker = ["MOVE WITH PURPOSE", "FUEL YOUR EVERYDAY", "TRAIN WITH INTENT", "EAT WITH JOY", "TRACK EVERY REP", "COOK SOMETHING GOOD"];
 ---
 
 <!doctype html>
@@ -27,8 +34,10 @@ import "../styles/landing.css";
         <div class="lp-atmosphere__photo lp-atmosphere__photo--gym"></div>
         <div class="lp-atmosphere__photo lp-atmosphere__photo--kitchen"></div>
         <div class="lp-atmosphere__shade"></div>
+        <div class="lp-spot"></div>
         <div class="lp-grain"></div>
       </div>
+      <div class="lp-wipe" aria-hidden="true"></div>
 
       <header class="lp-top">
         <a href="/" class="lp-wordmark" aria-label="Bodyworks home">BODYWORKS<span>.</span></a>
@@ -38,10 +47,19 @@ import "../styles/landing.css";
         </div>
       </header>
 
+      <div class="lp-ticker" aria-hidden="true">
+        <div class="lp-ticker-track">
+          {[0, 1].map(() => ticker.map((t) => <><span>{t}</span><span>✦</span></>))}
+        </div>
+      </div>
+
       <main class="lp-main">
         <section class="lp-heading" aria-labelledby="lp-title">
           <p class="lp-eyebrow"><span></span> YOUR ROUTINE STARTS HERE <span></span></p>
-          <h1 id="lp-title">SAME GOAL.<br /><em>TWO WAYS.</em></h1>
+          <h1 id="lp-title" aria-label="Same goal. Two ways.">
+            <span class="lp-line" aria-hidden="true">{lineOne.map(({ ch, n }) => <span class="lp-ch" style={`--n:${n}`}>{ch}</span>)}</span>
+            <span class="lp-line lp-line--em" aria-hidden="true"><em>{lineTwo.map(({ ch, n }) => <span class="lp-ch" style={`--n:${n}`}>{ch}</span>)}</em></span>
+          </h1>
           <p class="lp-subtitle">Train harder. Eat better. Build a healthier you.</p>
         </section>
 
@@ -51,6 +69,7 @@ import "../styles/landing.css";
             <div class="lp-choice-tint" aria-hidden="true"></div>
             <div class="lp-card-grid" aria-hidden="true"></div>
             <div class="lp-card-particles lp-card-particles--gym" aria-hidden="true"></div>
+            <div class="lp-card-glare" aria-hidden="true"></div>
 
             <div class="lp-choice-meta">
               <span>01 <i>/</i> MOVE</span>
@@ -80,6 +99,7 @@ import "../styles/landing.css";
             <div class="lp-choice-tint" aria-hidden="true"></div>
             <div class="lp-card-grid" aria-hidden="true"></div>
             <div class="lp-card-particles lp-card-particles--food" aria-hidden="true"></div>
+            <div class="lp-card-glare" aria-hidden="true"></div>
 
             <div class="lp-choice-meta">
               <span>02 <i>/</i> FUEL</span>
@@ -88,7 +108,7 @@ import "../styles/landing.css";
 
             <div class="lp-choice-body">
               <span class="lp-choice-icon lp-choice-icon--food" aria-hidden="true">
-                <svg viewBox="0 0 48 48" fill="none"><path d="M24 7v5M13 11l3 4M35 11l-3 4M10 24a14 14 0 0 1 28 0c0 8-6 14-14 14S10 32 10 24Z" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M16 26c3-4 5 4 8 0s5 4 8 0" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+                <svg viewBox="0 0 48 48" fill="none"><path class="lp-steam" d="M24 7v5M13 11l3 4M35 11l-3 4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M10 24a14 14 0 0 1 28 0c0 8-6 14-14 14S10 32 10 24Z" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M16 26c3-4 5 4 8 0s5 4 8 0" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
               </span>
               <p class="lp-choice-kicker">MAKE GOOD FOOD HAPPEN</p>
               <h2>RECI<br />PES<span>.</span></h2>
@@ -112,5 +132,75 @@ import "../styles/landing.css";
         </footer>
       </main>
     </div>
+
+    <script>
+      const page = document.querySelector<HTMLElement>(".lp");
+      const cards = document.querySelectorAll<HTMLAnchorElement>(".lp-choice");
+      const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const finePointer = matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+      if (page && !reduced && finePointer) {
+        // --- smooth cursor spotlight ---
+        let tx = innerWidth / 2, ty = innerHeight * 0.4, cx = tx, cy = ty, running = false;
+        const follow = () => {
+          cx += (tx - cx) * 0.12;
+          cy += (ty - cy) * 0.12;
+          page.style.setProperty("--sx", `${cx}px`);
+          page.style.setProperty("--sy", `${cy}px`);
+          if (Math.abs(tx - cx) > 0.5 || Math.abs(ty - cy) > 0.5) requestAnimationFrame(follow);
+          else running = false;
+        };
+        addEventListener("pointermove", (e) => {
+          tx = e.clientX;
+          ty = e.clientY;
+          page.classList.add("has-pointer");
+          if (!running) { running = true; requestAnimationFrame(follow); }
+        });
+        document.documentElement.addEventListener("pointerleave", () => page.classList.remove("has-pointer"));
+
+        // --- 3D tilt, parallax photo and glare per card ---
+        cards.forEach((card) => {
+          let frame = 0;
+          card.addEventListener("pointermove", (e) => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => {
+              const r = card.getBoundingClientRect();
+              const px = (e.clientX - r.left) / r.width;
+              const py = (e.clientY - r.top) / r.height;
+              card.classList.add("is-tracking");
+              card.style.setProperty("--rx", `${((0.5 - py) * 7).toFixed(2)}deg`);
+              card.style.setProperty("--ry", `${((px - 0.5) * 9).toFixed(2)}deg`);
+              card.style.setProperty("--tx", ((0.5 - px) * 26).toFixed(1));
+              card.style.setProperty("--ty", ((0.5 - py) * 18).toFixed(1));
+              card.style.setProperty("--mx", `${(px * 100).toFixed(1)}%`);
+              card.style.setProperty("--my", `${(py * 100).toFixed(1)}%`);
+            });
+          });
+          card.addEventListener("pointerleave", () => {
+            cancelAnimationFrame(frame);
+            card.classList.remove("is-tracking");
+            ["--rx", "--ry", "--tx", "--ty"].forEach((p) => card.style.removeProperty(p));
+          });
+        });
+      }
+
+      // --- gold wipe before navigating ---
+      if (page && !reduced) {
+        cards.forEach((card) => {
+          card.addEventListener("click", (e) => {
+            if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            e.preventDefault();
+            page.style.setProperty("--wx", `${e.clientX}px`);
+            page.style.setProperty("--wy", `${e.clientY}px`);
+            page.classList.add("is-leaving");
+            setTimeout(() => { location.href = card.href; }, 560);
+          });
+        });
+        // coming back with the back button should not leave the wipe on screen
+        addEventListener("pageshow", (e) => {
+          if (e.persisted) page.classList.remove("is-leaving");
+        });
+      }
+    </script>
   </body>
 </html>
