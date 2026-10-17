@@ -224,7 +224,7 @@ export default function RecipesBrowser({
   return (
     <div className="rb-page">
       <header className="rb-topbar">
-        <a href="/" className="rb-wordmark">bodyworks</a>
+        <a href="/" className="rb-wordmark">BODYWORKS<span>.</span></a>
         <nav className="rb-nav" aria-label="Main">
           <a href="/workouts">Workouts</a>
           <a href="/recipes" aria-current="page">Recipes</a>

@@ -1,62 +1,44 @@
-/* Bodyworks — "Dark Athletic" theme: charcoal surfaces, lime accent, condensed headings */
+/* Bodyworks — one dark theme shared with the landing page: warm charcoal, gold accent, Anton headings. */
 
 html, body { margin: 0; }
-html { background: #eef8f3; color-scheme: light; }
-html[data-theme="dark"] { background: #1f2a24; color-scheme: dark; }
+html { background: #100e0b; color-scheme: dark; }
 
-/* Two themes: light = "soft mint", dark = "warm forest".
-   <html data-theme> is set before first paint by a tiny inline script in every page <head>;
-   the toggle in the account menu flips it and remembers the choice in localStorage. */
 .rb-page {
-  --bg: #eef8f3;
-  --paper: #ffffff;       /* card / panel surface */
-  --raise: #f3faf6;       /* hover / raised surface */
-  --ink: #26413a;
-  --sub: #4f6b62;
-  --edge: #dcebe3;
-  --rule: #c4d9cd;
-  --cta: #2a7461;
-  --on-cta: #ffffff;
-  --cta-hover: #1f5d4c;
-  --warn: #b4532a;
-  --rec: #c93a2b;         /* "recording" red */
-  --star: #e0a100;
-  --star-off: #cfe0d6;
-  --media-bg: #dff1e8;
-  --ph-ink: rgba(38, 65, 58, 0.3);
-  --slot-b: #ffefc2; --slot-l: #d9f1de; --slot-d: #eadff9; --slot-s: #fcdde8;
-  --slot-ink: #26413a;
-  --slot-mix: 100%;
-  --shadow: 0 10px 28px -16px rgba(42, 116, 97, 0.5);
-  --shadow-lg: 0 30px 80px -24px rgba(38, 65, 58, 0.5);
-  --scrim: rgba(38, 65, 58, 0.5);
-  --font-head: "Manrope", system-ui, sans-serif;
-  --font-body: "Manrope", system-ui, sans-serif;
-}
-html[data-theme="dark"] .rb-card-placeholder { background: var(--tone, #2d5a43); }
-html[data-theme="dark"] .rb-page {
-  --bg: #1f2a24;
-  --paper: #2a3830;
-  --raise: #33443a;
-  --ink: #f3e9d8;
-  --sub: #b3bfb1;
-  --edge: #37483e;
-  --rule: #45574c;
-  --cta: #e8825f;
-  --on-cta: #1f2a24;
-  --cta-hover: #f09a7c;
+  --bg: #100e0b;
+  --paper: #1d1913;       /* card / panel surface */
+  --raise: #292117;       /* hover / raised surface */
+  --ink: #f7f0e2;
+  --sub: #b9ad98;
+  --edge: rgba(247, 240, 226, 0.14);
+  --rule: rgba(247, 240, 226, 0.24);
+  --gold: #edb843;
+  --cta: #edb843;
+  --on-cta: #100e0b;
+  --cta-hover: #ffce67;
   --warn: #f0a78a;
-  --rec: #ff7a6b;
-  --star: #e9b949;
-  --star-off: #44564b;
-  --media-bg: #1b2a24;
-  --ph-ink: rgba(255, 255, 255, 0.35);
-  --slot-b: #e9c46a; --slot-l: #9bcf9c; --slot-d: #c3a8e8; --slot-s: #f0a7a0;
-  --slot-ink: #1f2a24;
-  --slot-mix: 26%;
-  --shadow: 0 12px 30px -14px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 30px 80px -20px rgba(0, 0, 0, 0.8);
-  --scrim: rgba(8, 12, 10, 0.74);
+  --rec: #ff7a6b;         /* "recording" red */
+  --star: #edb843;
+  --star-off: #3d3427;
+  --media-bg: #17130d;
+  --ph-ink: rgba(255, 248, 232, 0.35);
+  --slot-b: #edb843; --slot-l: #b9c98a; --slot-d: #d9a57a; --slot-s: #e8a08a;
+  --slot-ink: #100e0b;
+  --slot-mix: 24%;
+  --shadow: 0 12px 30px -14px rgba(0, 0, 0, 0.65);
+  --shadow-lg: 0 30px 80px -20px rgba(0, 0, 0, 0.85);
+  --scrim: rgba(8, 7, 5, 0.78);
+  --font-head: "Anton", Impact, sans-serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+  position: relative;
+  isolation: isolate;
+}
+
+/* soft gold glow + print grain behind every page, like the landing page */
+.rb-page::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E") 0 0 / 180px 180px,
+    radial-gradient(ellipse at 50% 0%, rgba(237, 184, 67, 0.1), transparent 46%);
 }
 
 .rb-page {
@@ -65,22 +47,26 @@ html[data-theme="dark"] .rb-page {
 }
 .rb-page a { color: var(--cta); }
 .rb-page h1, .rb-page h2, .rb-page h3 {
-  font-family: var(--font-head); font-weight: 800; letter-spacing: -0.02em;
+  font-family: var(--font-head); font-weight: 400; letter-spacing: 0.005em; text-transform: uppercase;
 }
 .rb-page :focus-visible { outline: 3px solid var(--cta); outline-offset: 2px; }
 
 /* ---------- top bar ---------- */
 .rb-topbar, .pf-topbar {
   display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
-  padding: 0.9rem 2rem; border-bottom: 1px solid var(--edge); background: var(--bg);
+  padding: 0.85rem 2rem; min-height: 66px; box-sizing: border-box;
+  border-bottom: 1px solid rgba(247, 240, 226, 0.1); background: rgba(16, 14, 11, 0.82);
+  backdrop-filter: blur(8px);
 }
 .rb-wordmark, .rb-logo {
-  font: 800 1.5rem/1 var(--font-head); letter-spacing: -0.03em;
-  color: var(--cta) !important; text-decoration: none; display: inline-flex; align-items: center;
+  font: 400 1.45rem/1 var(--font-head); letter-spacing: 0.055em; text-transform: uppercase;
+  color: var(--ink) !important; text-decoration: none; display: inline-flex; align-items: center;
 }
+.rb-wordmark span, .rb-logo span { color: var(--gold); }
 .rb-nav { display: flex; gap: 0.3rem; flex: 1; }
 .rb-nav a {
-  padding: 0.5rem 0.9rem; text-decoration: none; font-weight: 600; color: var(--sub); border-bottom: 2px solid transparent;
+  padding: 0.5rem 0.9rem; text-decoration: none; font-weight: 800; font-size: 0.7rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--sub); border-bottom: 2px solid transparent; transition: color 200ms ease;
 }
 .rb-nav a:hover { color: var(--ink); }
 .rb-nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--cta); }
@@ -167,8 +153,8 @@ html[data-theme="dark"] .rb-page {
 .rb-card-media > img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .rb-card-placeholder {
   width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-  background: var(--tone-soft, var(--media-bg));
-  color: var(--ph-ink); font: 800 4rem var(--font-head); text-transform: uppercase;
+  background: var(--tone, var(--media-bg));
+  color: var(--ph-ink); font: 400 4rem var(--font-head); text-transform: uppercase;
 }
 .rb-card-cuisine {
   position: absolute; top: 0.75rem; right: 0.75rem; background: var(--paper); color: var(--cta);
@@ -429,3 +415,47 @@ html[data-theme="dark"] .rb-page {
 }
 .mp-clearday:hover { border-color: var(--warn); color: var(--warn); }
 .mp-dayhead.today .mp-clearday { border-color: color-mix(in srgb, var(--on-cta) 40%, transparent); color: var(--on-cta); }
+
+/* ==========================================================
+   Landing-page look: sharp gold-edged panels, tracked caps
+   ========================================================== */
+.rb-page .rb-card, .rb-page .mp-card, .rb-page .mp-box, .rb-page .rb-modal,
+.rb-page .af-card, .rb-page .rf, .rb-page .wk-box {
+  border-radius: 7px; border-color: rgba(237, 184, 67, 0.32);
+}
+.rb-page .rb-card { padding: 6px; transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease; }
+.rb-page .rb-card:hover {
+  transform: translateY(-4px); border-color: var(--gold);
+  box-shadow: inset 0 0 0 1px rgba(237, 184, 67, 0.3), 0 0 30px rgba(237, 184, 67, 0.1), 0 22px 60px rgba(0, 0, 0, 0.45);
+}
+.rb-page .rb-card-media { border-radius: 3px; }
+.rb-page .rb-card-cuisine, .rb-page .rb-chip, .rb-page .rb-suggest button, .rb-page .rb-add-btn { border-radius: 2px; }
+.rb-page .rb-chip, .rb-page .rb-card-cuisine { text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.66rem; font-weight: 800; }
+.rb-page .rb-search, .rb-page .rb-ing-field { border-radius: 4px; }
+
+.rb-page .rb-title { font-size: clamp(3.2rem, 7vw, 5.6rem); line-height: 0.9; text-shadow: 0 4px 32px rgba(0, 0, 0, 0.35); }
+.rb-page .rb-lede, .rb-page .rb-field-label { letter-spacing: 0.16em; text-transform: uppercase; font-size: 0.7rem; font-weight: 700; }
+.rb-page .rb-field-label { color: var(--gold); letter-spacing: 0.2em; font-weight: 800; }
+
+/* buttons: tracked caps, tiny radius, gold fill for the main action */
+.rb-page .rb-btn {
+  border-radius: 3px; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.7rem; font-weight: 800;
+  padding: 0.65rem 1.1rem; border-color: rgba(247, 240, 226, 0.3);
+  transition: background 200ms ease, border-color 200ms ease, transform 200ms ease;
+}
+.rb-page .rb-btn:hover:not(:disabled) { border-color: var(--gold); }
+.rb-page .rb-btn-solid:hover:not(:disabled) { transform: translateY(-1px); }
+
+.rb-page .rb-nav a:hover { color: var(--gold); }
+.rb-page .rb-nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--gold); }
+.rb-page .rb-menu { border-radius: 4px; border-color: rgba(237, 184, 67, 0.32); }
+
+/* gold keylines instead of plain rules on section headings */
+.rb-page .rb-filter h2 { border-bottom-color: rgba(237, 184, 67, 0.4); }
+.rb-page .rb-filter h3 { color: var(--gold); font-family: var(--font-body); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.2em; }
+.rb-page .rb-steps li::before { font-weight: 400; }
+.rb-page .mp-dayhead b, .rb-page .mp-slot-label { font-weight: 400; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-page .rb-card, .rb-page .rb-btn { transition: none; }
+}

@@ -7,7 +7,7 @@ import ThemeToggle from "./ThemeToggle";
 export default function AccountMenu({
   light = true,
   showAddRecipe = true,
-  showThemeToggle = true,
+  showThemeToggle = false,
 }: {
   light?: boolean;
   showAddRecipe?: boolean;

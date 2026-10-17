@@ -52,3 +52,9 @@
   .pf-meta h1 { font-size: 2.4rem; }
   .pf-grid { grid-template-columns: 1fr; }
 }
+
+/* landing-page look */
+.pf-banner { border-radius: 7px; border-color: rgba(237, 184, 67, 0.32); }
+.pf-sorts button { border-radius: 3px; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.7rem; font-weight: 800; }
+.pf-back { text-transform: uppercase; letter-spacing: 0.16em; font-size: 0.7rem; font-weight: 800; }
+.pf-back:hover { color: var(--gold) !important; }

@@ -3,31 +3,18 @@
    the accent variables and styles the calendar. */
 
 .rb-page.wk-page {
-  --cta: #c8352a;
-  --cta-hover: #a82a20;
-  --on-cta: #ffffff;
-  --star: #c8352a;
-  --ok: #1f8a4c;      /* success green for ticks */
-  --ok-ink: #ffffff;
-}
-html[data-theme="dark"] .rb-page.wk-page {
-  --cta: #ff4a3d;
-  --cta-hover: #ff6b5e;
-  --on-cta: #0f1210;
-  --star: #ff4a3d;
-  --ok: #4ade80;
-  --ok-ink: #06210f;
+  --ok: #8fcf6b;      /* success green for ticks */
+  --ok-ink: #0d1a06;
 }
 .rb-page.wk-page a { color: var(--cta); }
-.rb-page.wk-page .rb-wordmark { color: var(--cta) !important; }
 
-/* four reds, told apart by shade AND icon (never colour alone) */
-.wk-shade--ember   { --c: #ff4a3d; --c-ink: #0f1210; }
-.wk-shade--crimson { --c: #b3261e; --c-ink: #ffffff; }
-.wk-shade--blush   { --c: #ff9a8c; --c-ink: #0f1210; }
-.wk-shade--wine    { --c: #4a1f1c; --c-ink: #ffb3a8; --c-edge: #ff6b5e; }
-.wk-shade--scarlet { --c: #e11d2e; --c-ink: #ffffff; }
-.wk-shade--rose    { --c: #f4728a; --c-ink: #0f1210; }
+/* warm gold/ember shades, told apart by shade AND icon (never colour alone) */
+.wk-shade--ember   { --c: #edb843; --c-ink: #100e0b; }
+.wk-shade--crimson { --c: #c4501f; --c-ink: #fff5e6; }
+.wk-shade--blush   { --c: #f7e3b0; --c-ink: #100e0b; }
+.wk-shade--wine    { --c: #3a2a14; --c-ink: #edb843; --c-edge: #edb843; }
+.wk-shade--scarlet { --c: #e8793a; --c-ink: #100e0b; }
+.wk-shade--rose    { --c: #d9a57a; --c-ink: #100e0b; }
 
 /* ---------- layout ---------- */
 .wk-container { max-width: 1180px; margin: 0 auto; padding: 2.4rem 2rem 5rem; box-sizing: border-box; }
