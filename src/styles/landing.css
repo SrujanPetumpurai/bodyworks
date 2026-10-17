@@ -80,14 +80,14 @@ html:has(.lp) { background: #15110e; }
 
 /* ---------- stage: image panel + info panel ---------- */
 .lp-stage {
-  max-width: 1240px; margin: 0.4rem auto 3rem; box-sizing: border-box;
+  max-width: 940px; margin: 0.4rem auto 3rem; box-sizing: border-box;
   width: calc(100% - 4rem); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
   gap: 0; border-radius: 28px; overflow: hidden; border: 1px solid var(--rule);
   background: #1b1510; box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.9);
 }
 
 .lp-visual {
-  position: relative; min-height: 560px; overflow: hidden;
+  position: relative; min-height: 420px; overflow: hidden;
   background: radial-gradient(circle at 38% 34%, #f3c35f 0%, #dba03a 55%, #c98a26 100%);
 }
 .lp-hero-img {
@@ -100,14 +100,14 @@ html:has(.lp) { background: #15110e; }
 }
 
 .lp-info {
-  padding: 2.4rem 2.4rem 2rem; display: flex; flex-direction: column; gap: 1.4rem; text-align: center;
+  padding: 1.6rem 1.8rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; text-align: center;
   background-color: #1b1510;
   background-image:
     repeating-linear-gradient(45deg, rgba(244, 227, 193, 0.035) 0 1px, transparent 1px 16px),
     repeating-linear-gradient(-45deg, rgba(244, 227, 193, 0.035) 0 1px, transparent 1px 16px);
 }
 .rb-page .lp-info h1 {
-  font: 400 clamp(3.2rem, 7.4vw, 6.4rem)/0.95 var(--display); letter-spacing: 0.01em; text-transform: uppercase;
+  font: 400 clamp(2.4rem, 5vw, 4.2rem)/0.95 var(--display); letter-spacing: 0.01em; text-transform: uppercase;
   margin: 0; color: var(--ink);
 }
 .lp-tag { margin: -0.2rem 0 0; font: 700 0.72rem var(--font-body); letter-spacing: 0.22em; text-transform: uppercase; color: var(--sub); }
