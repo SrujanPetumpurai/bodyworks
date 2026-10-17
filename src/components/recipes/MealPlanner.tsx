@@ -357,7 +357,7 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
 
                 {SLOTS.map((s) => (
                   <Row key={s.key}>
-                    <div className="mp-slotlabel">{s.label}</div>
+                    <div className="mp-slotlabel" data-slot={s.key}>{s.label}</div>
                     {days.map((d) => {
                       const id = `${d.key}|${s.key}`;
                       const list = bySlot.get(id) ?? [];
@@ -365,6 +365,7 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
                         <div
                           key={id}
                           role="gridcell"
+                          data-slot={s.key}
                           className={`mp-cell ${d.key === todayKey ? "today" : ""} ${d.key < todayKey ? "past" : ""} ${overKey === id ? "over" : ""} ${armed ? "armed" : ""}`}
                           onClick={() => armed && place(armed, d.key, s.key)}
                           aria-label={`${s.label}, ${d.dow} ${d.day}`}

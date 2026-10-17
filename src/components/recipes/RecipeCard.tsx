@@ -1,6 +1,9 @@
 import Avatar, { TONES, hash } from "./Avatar";
 import type { RecipeSummary } from "./RecipesBrowser";
 
+// soft tints for the light theme; the darker TONES are used in dark mode
+const PASTELS = ["#ffefc2", "#eadff9", "#ffdccf", "#d6ecfa", "#d9f1de", "#fcdde8"];
+
 export default function RecipeCard({
   recipe,
   onClick,
@@ -34,7 +37,7 @@ export default function RecipeCard({
         ) : (
           <div
             className="rb-card-placeholder"
-            style={{ background: TONES[hash(recipe.name) % TONES.length] }}
+            style={{ "--tone": TONES[hash(recipe.name) % TONES.length], "--tone-soft": PASTELS[hash(recipe.name) % PASTELS.length] } as React.CSSProperties}
             aria-hidden="true"
           >
             {recipe.name.charAt(0)}

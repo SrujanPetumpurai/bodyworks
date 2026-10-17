@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { signOut, useSession } from "../lib/auth-client";
 import Avatar from "./recipes/Avatar";
+import ThemeToggle from "./ThemeToggle";
 
 // Sign-in link when logged out; avatar dropdown when logged in.
 export default function AccountMenu({ light = true, showAddRecipe = true }: { light?: boolean; showAddRecipe?: boolean }) {
@@ -22,12 +23,13 @@ export default function AccountMenu({ light = true, showAddRecipe = true }: { li
     };
   }, [open]);
 
-  if (isPending) return <div className="rb-account" aria-hidden="true" />;
+  if (isPending) return <div className="rb-account"><ThemeToggle /></div>;
 
   if (!session) {
     const next = encodeURIComponent(location.pathname + location.search);
     return (
       <div className={`rb-account ${light ? "light" : ""}`}>
+        <ThemeToggle />
         <a className="rb-btn" href={`/auth?next=${next}`}>Sign in</a>
       </div>
     );
@@ -36,6 +38,7 @@ export default function AccountMenu({ light = true, showAddRecipe = true }: { li
   const u = session.user;
   return (
     <div className={`rb-account ${light ? "light" : ""}`} ref={ref}>
+      <ThemeToggle />
       {showAddRecipe && <a className="rb-btn rb-btn-solid" href="/recipes/new">+ Add recipe</a>}
       <button
         type="button"
