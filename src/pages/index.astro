@@ -1,5 +1,6 @@
 ---
 export const prerender = false;
+import { CalendarDays, NotebookPen, Repeat, UtensilsCrossed } from "lucide-react";
 import AccountMenu from "../components/AccountMenu";
 import "../styles/recipes.css";
 import "../styles/forms.css";
@@ -8,89 +9,79 @@ import "../styles/landing.css";
 // People who are signed in already know the site: skip straight to their recipes.
 if (Astro.locals.user) return Astro.redirect("/recipes");
 
-const sections = [
-  {
-    id: "workouts",
-    title: "Workouts",
-    lede: "Plan your training week on a calendar and tick sessions off as you go.",
-    points: [
-      "Schedule workouts by day and time",
-      "Repeat a session on a weekly pattern",
-      "Mark sessions as done",
-      "Make your own icons for custom workouts",
-    ],
-    cta: "Open workouts",
-    href: "/workouts",
-    image: "/squat2.png",
-    alt: "Anatomy illustration of the muscles working during a single-leg squat",
-  },
-  {
-    id: "recipes",
-    title: "Recipes",
-    lede: "Keep the meals you cook, find ones you like, and plan the week around them.",
-    points: [
-      "Your own recipes, plus ones you save from other cooks",
-      "Drag recipes into a weekly meal plan",
-      "A cook log with photo, notes and a voice note each time you make a dish",
-      "Communities to share recipes with",
-    ],
-    cta: "Open recipes",
-    href: "/recipes",
-    image: "/foodRecipes/landingPage_noBg.png",
-    alt: "Illustrated high-protein meals",
-  },
+const panels = [
+  { title: "Workouts", points: ["Schedule by day and time", "Repeat on a weekly pattern", "Mark sessions as done"] },
+  { title: "Recipes", points: ["Your recipes, plus ones you save", "Drag them into a weekly meal plan", "Photos and voice notes each time you cook"] },
+];
+const badges = [
+  { label: "Schedule", Icon: CalendarDays },
+  { label: "Repeat", Icon: Repeat },
+  { label: "Meal plan", Icon: UtensilsCrossed },
+  { label: "Cook log", Icon: NotebookPen },
 ];
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
-    <script is:inline>try{var t=localStorage.getItem("bw-theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="light"}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Train, fuel, repeat — bodyworks</title>
     <meta name="description" content="Plan your workouts on a calendar, keep your recipes, and plan your meals for the week." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
   </head>
   <body>
     <div class="rb-page lp">
-      <header class="rb-topbar">
-        <a href="/" class="rb-wordmark">bodyworks</a>
-        <span class="lp-spacer"></span>
-        <AccountMenu client:load />
+      <header class="lp-top">
+        <a href="/" class="lp-wordmark">bodyworks</a>
+        <AccountMenu showThemeToggle={false} client:load />
       </header>
 
-      <main class="lp-main">
-        <section class="lp-hero">
-          <h1>Train, fuel, repeat.</h1>
-          <p>Plan your workouts, keep your recipes, and line up your meals for the week, all in one place.</p>
+      <main class="lp-stage">
+        <section class="lp-visual" aria-hidden="false">
+          <img class="lp-hero-img" src="/squat2.png" alt="Anatomy illustration of the muscles working during a single-leg squat" />
+          <img class="lp-pan-img" src="/foodRecipes/landingPage_noBg.png" alt="Illustrated pan of high-protein food" />
         </section>
 
-        <section class="lp-cards" aria-label="What you can do here">
-          {
-            sections.map((s) => (
-              <a class={`lp-card lp-card--${s.id}`} href={s.href}>
-                <div class="lp-media">
-                  <img src={s.image} alt={s.alt} loading="eager" />
-                </div>
-                <div class="lp-body">
-                  <h2>{s.title}</h2>
-                  <p class="lp-lede">{s.lede}</p>
+        <section class="lp-info">
+          <h1>Train.<br />Fuel.<br />Repeat.</h1>
+          <p class="lp-tag">Plan the week. Log the work.</p>
+
+          <div class="lp-panels">
+            {
+              panels.map((p) => (
+                <div class="lp-panel">
+                  <h2>{p.title}</h2>
                   <ul>
-                    {s.points.map((pt) => (
+                    {p.points.map((pt) => (
                       <li>{pt}</li>
                     ))}
                   </ul>
-                  <span class="rb-btn rb-btn-solid lp-cta">{s.cta} →</span>
                 </div>
-              </a>
-            ))
-          }
+              ))
+            }
+          </div>
+
+          <ul class="lp-badges" aria-label="Features">
+            {
+              badges.map(({ label, Icon }) => (
+                <li>
+                  <Icon size={22} strokeWidth={1.6} aria-hidden="true" />
+                  <span>{label}</span>
+                </li>
+              ))
+            }
+          </ul>
+
+          <div class="lp-ctas">
+            <a class="lp-cta lp-cta--main" href="/recipes">Open recipes <span aria-hidden="true">→</span></a>
+            <a class="lp-cta lp-cta--alt" href="/workouts">Open workouts <span aria-hidden="true">→</span></a>
+          </div>
         </section>
       </main>
     </div>
