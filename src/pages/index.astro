@@ -36,7 +36,12 @@ const badges = [
     />
   </head>
   <body>
-    <div class="rb-page lp">
+    <div class="rb-page lp">   
+      <div class="lp-background" aria-hidden="true">
+        <div class="lp-background__half lp-background__half--kitchen"></div>
+        <div class="lp-background__half lp-background__half--workout"></div>
+        <div class="lp-background__overlay"></div>
+      </div>
       <header class="lp-top">
         <a href="/" class="lp-wordmark">bodyworks</a>
         <AccountMenu showThemeToggle={false} client:load />
@@ -44,8 +49,7 @@ const badges = [
 
       <main class="lp-stage">
         <section class="lp-visual" aria-hidden="false">
-          <img class="lp-hero-img" src="/squat2.png" alt="Anatomy illustration of the muscles working during a single-leg squat" />
-          <img class="lp-pan-img" src="/foodRecipes/landingPage_noBg.png" alt="Illustrated pan of high-protein food" />
+ <img class="lp-pan-img" src="/public/cooking_drawing.jpg" alt="Illustrated pan of high-protein food" />
         </section>
 
         <section class="lp-info">
