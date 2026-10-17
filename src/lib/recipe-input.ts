@@ -30,6 +30,8 @@ export function parseRecipeInput(body: any): Result {
 
   const imageUrl = optionalUrl(body?.imageUrl);
   const videoUrl = optionalUrl(body?.videoUrl);
+  const voiceNoteUrl = optionalUrl(body?.voiceNoteUrl);
+  if (voiceNoteUrl === "invalid") return { ok: false, error: "Voice note must be an upload." };
   if (imageUrl === "invalid") return { ok: false, error: "Image must be an https link or an upload." };
   if (videoUrl === "invalid") return { ok: false, error: "Video link must start with https://" };
 
@@ -80,6 +82,7 @@ export function parseRecipeInput(body: any): Result {
       description,
       imageUrl,
       videoUrl,
+      voiceNoteUrl,
       cuisine: str(body?.cuisine, 40) || null,
       prepTimeMinutes: prep,
       servings,

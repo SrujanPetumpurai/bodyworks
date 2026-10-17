@@ -30,7 +30,7 @@
 
 .cm-create { max-width: 560px; margin-top: 1.4rem; }
 .cm-choice { border: 1px dashed var(--rule); border-radius: 10px; padding: 0.6rem 1rem 0.9rem; margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }
-.cm-choice legend { font: 800 1.2rem var(--font-head); text-transform: uppercase; padding: 0 0.4rem; }
+.cm-choice legend { font: 800 1rem var(--font-head); padding: 0 0.4rem; }
 .cm-choice label { display: flex; gap: 0.7rem; align-items: flex-start; cursor: pointer; color: var(--sub); }
 .cm-choice label strong { display: block; color: var(--ink); }
 .cm-choice input { accent-color: var(--cta); margin-top: 0.3rem; }
@@ -99,7 +99,7 @@
 /* ---------- recipe form: community + visibility ---------- */
 .rf-place { display: flex; flex-direction: column; gap: 0.8rem; }
 .rf-vis { border: 1px dashed var(--rule); border-radius: 10px; padding: 0.6rem 1rem 0.9rem; margin: 0; display: flex; flex-direction: column; gap: 0.6rem; }
-.rf-vis legend { font: 800 1.2rem var(--font-head); text-transform: uppercase; padding: 0 0.4rem; }
+.rf-vis legend { font: 800 1rem var(--font-head); padding: 0 0.4rem; }
 .rf-vis label { display: flex; gap: 0.7rem; align-items: flex-start; cursor: pointer; color: var(--sub); }
 .rf-vis label strong { display: block; color: var(--ink); }
 .rf-vis label.off { opacity: 0.45; cursor: not-allowed; }

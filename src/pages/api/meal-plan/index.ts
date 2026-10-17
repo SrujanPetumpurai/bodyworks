@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { createMeal, listMeals, parseNewMeal } from "../../../db/meal-plan";
+import { clearDay, createMeal, listMeals, parseNewMeal } from "../../../db/meal-plan";
 import { isDateKey } from "../../../db/workouts";
 import { json } from "../../../lib/recipe-input";
 
@@ -25,4 +25,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   const row = await createMeal(user.id, parsed.value);
   return row ? json(row, 201) : json({ error: "Recipe not found" }, 404);
+};
+
+// DELETE /api/meal-plan?date=YYYY-MM-DD clears that whole day
+export const DELETE: APIRoute = async ({ url, locals }) => {
+  const user = locals.user;
+  if (!user) return json({ error: "Sign in to edit your meal plan" }, 401);
+
+  const date = url.searchParams.get("date");
+  if (!isDateKey(date)) return json({ error: "date must be YYYY-MM-DD" }, 400);
+
+  return json({ deleted: await clearDay(user.id, date) });
 };

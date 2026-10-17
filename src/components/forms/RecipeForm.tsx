@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ImageUpload from "./ImageUpload";
+import VoiceRecorder from "./VoiceRecorder";
 
 const UNITS = ["g", "ml", "tsp", "tbsp", "cup", "piece"];
 
@@ -12,6 +13,7 @@ export type RecipeFormValues = {
   difficulty: string;
   imageUrl: string | null;
   videoUrl: string;
+  voiceNoteUrl: string | null;
   ingredients: { name: string; amount: string; unit: string }[];
   steps: string[];
   communityId: string; // "" = standalone recipe
@@ -45,6 +47,7 @@ export const EMPTY_RECIPE: RecipeFormValues = {
   difficulty: "",
   imageUrl: null,
   videoUrl: "",
+  voiceNoteUrl: null,
   ingredients: [{ name: "", amount: "", unit: "g" }],
   steps: [""],
   communityId: "",
@@ -208,6 +211,12 @@ export default function RecipeForm({
         Video link (optional)
         <input type="url" value={v.videoUrl} onChange={(e) => set("videoUrl", e.target.value)} placeholder="https://youtube.com/…" />
       </label>
+
+      <VoiceRecorder
+        label="Voice note (optional)"
+        value={v.voiceNoteUrl}
+        onChange={(url) => set("voiceNoteUrl", url)}
+      />
 
       <fieldset className="rf-group">
         <legend>Ingredients</legend>

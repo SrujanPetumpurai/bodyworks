@@ -2,26 +2,33 @@
 export const prerender = false;
 import RecipesBrowser from "../components/recipes/RecipesBrowser";
 import { listFoods, listRecipes } from "../db/recipes";
+import { listSavedSlugs } from "../db/saved-recipes";
 import "../styles/recipes.css";
 import "../styles/forms.css";
 
-const [foods, recipes] = await Promise.all([listFoods(), listRecipes({ viewerId: Astro.locals.user?.id })]);
+const user = Astro.locals.user;
+const [foods, recipes, savedSlugs] = await Promise.all([
+  listFoods(),
+  listRecipes({ viewerId: user?.id }),
+  user ? listSavedSlugs(user.id) : Promise.resolve([] as string[]),
+]);
 const foodOptions = foods.map((f) => ({ slug: f.slug, name: f.name }));
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script is:inline>try{var t=localStorage.getItem("bw-theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="light"}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Recipes — bodyworks</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
   </head>
   <body>
-    <RecipesBrowser foods={foodOptions} recipes={recipes} signedIn={!!Astro.locals.user} client:load />
+    <RecipesBrowser foods={foodOptions} recipes={recipes} signedIn={!!user} userId={user?.id ?? null} savedSlugs={savedSlugs} client:load />
   </body>
 </html>

@@ -199,6 +199,20 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
     }
   }
 
+  async function clearDay(date: string, label: string) {
+    const removed = meals.filter((m) => m.date === date);
+    if (removed.length === 0) return;
+    if (!confirm(`Remove all ${removed.length} planned ${removed.length === 1 ? "meal" : "meals"} on ${label}?`)) return;
+    setMeals((ms) => ms.filter((m) => m.date !== date));
+    try {
+      const res = await fetch(`/api/meal-plan?date=${date}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+    } catch {
+      setMeals((ms) => [...ms, ...removed]);
+      setError("Couldn't clear that day.");
+    }
+  }
+
   /* ----- placing things ----- */
   function place(slug: string, date: string, slot: Slot) {
     if (!signedIn) return setError("Sign in to plan meals.");
@@ -290,8 +304,8 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
 
   return (
     <div className="mp-wrap">
-      <h1 className="rb-title">Meal plan</h1>
-      <p className="rb-lede">Drag a recipe onto a day and meal. Click a planned recipe to open it.</p>
+      <h2 className="mp-section-title">Meal plan</h2>
+      <p className="rb-hint">Drag a recipe onto a day and meal. Click a planned recipe to open it.</p>
 
       {!signedIn && (
         <p className="mp-banner">
@@ -328,12 +342,22 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
                   >
                     <span>{d.dow}</span>
                     <b>{d.day}</b>
+                    {meals.some((m) => m.date === d.key) && (
+                      <button
+                        type="button"
+                        className="mp-clearday"
+                        onClick={() => clearDay(d.key, `${d.dow} ${d.day}`)}
+                        aria-label={`Clear all meals on ${d.dow} ${d.day}`}
+                      >
+                        Clear day
+                      </button>
+                    )}
                   </div>
                 ))}
 
                 {SLOTS.map((s) => (
                   <Row key={s.key}>
-                    <div className="mp-slotlabel">{s.label}</div>
+                    <div className="mp-slotlabel" data-slot={s.key}>{s.label}</div>
                     {days.map((d) => {
                       const id = `${d.key}|${s.key}`;
                       const list = bySlot.get(id) ?? [];
@@ -341,6 +365,7 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
                         <div
                           key={id}
                           role="gridcell"
+                          data-slot={s.key}
                           className={`mp-cell ${d.key === todayKey ? "today" : ""} ${d.key < todayKey ? "past" : ""} ${overKey === id ? "over" : ""} ${armed ? "armed" : ""}`}
                           onClick={() => armed && place(armed, d.key, s.key)}
                           aria-label={`${s.label}, ${d.dow} ${d.day}`}
@@ -371,7 +396,7 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
           />
           <p className="mp-box-hint">Drag onto a slot, or tap one then tap a slot.</p>
           {recipes.length === 0 ? (
-            <p className="mp-box-hint">No recipes yet. <a href="/recipes/new">Add one</a>.</p>
+            <p className="mp-box-hint">Nothing to plan with yet. <a href="/recipes/new">Add a recipe</a> or save some from <a href="/recipes#discover">Discover</a>.</p>
           ) : shelf.length === 0 ? (
             <p className="mp-box-hint">No recipes match.</p>
           ) : (

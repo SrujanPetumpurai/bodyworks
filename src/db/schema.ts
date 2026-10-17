@@ -331,6 +331,7 @@ export const recipes = pgTable(
     description: text("description").notNull(),
     imageUrl: text("image_url"),
     videoUrl: text("video_url"), // e.g. a YouTube link
+    voiceNoteUrl: text("voice_note_url"), // optional spoken walkthrough recorded by the author
     externalUrl: text("external_url"), // e.g. original source link
     prepTimeMinutes: integer("prep_time_minutes"),
     difficulty: recipeDifficultyEnum("difficulty"),
@@ -492,6 +493,55 @@ export const mealPlanEntries = pgTable(
   ]
 );
 
+// A user's bookmarks of other people's recipes: shown in "My recipes -> Saved"
+// and offered in the meal planner. Losing access to a recipe hides it, not the bookmark.
+export const savedRecipes = pgTable(
+  "saved_recipes",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    recipeId: integer("recipe_id")
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("saved_recipe_unique").on(table.userId, table.recipeId),
+    index("saved_recipes_user_idx").on(table.userId),
+  ]
+);
+
+// "Cook log": one row each time a user makes a dish. Private to the user who wrote it,
+// so someone who saved another author's recipe keeps their own history of it.
+export const recipeCookLogs = pgTable(
+  "recipe_cook_logs",
+  {
+    id: serial("id").primaryKey(),
+    recipeId: integer("recipe_id")
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    // the day it was cooked (plain YYYY-MM-DD), separate from when the row was written
+    cookedOn: date("cooked_on", { mode: "string" }).notNull(),
+    photoUrl: text("photo_url"),
+    notes: text("notes"),
+    audioUrl: text("audio_url"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("cook_logs_user_recipe_idx").on(table.userId, table.recipeId, table.cookedOn),
+    // a log needs at least something in it
+    check(
+      "cook_log_not_empty",
+      sql`${table.photoUrl} IS NOT NULL OR ${table.notes} IS NOT NULL OR ${table.audioUrl} IS NOT NULL`
+    ),
+  ]
+);
+
 // =====================================================================
 // RELATIONS
 // =====================================================================
@@ -597,4 +647,14 @@ export const recipeStepsRelations = relations(recipeSteps, ({ one }) => ({
 export const recipeRatingsRelations = relations(recipeRatings, ({ one }) => ({
   recipe: one(recipes, { fields: [recipeRatings.recipeId], references: [recipes.id] }),
   user: one(user, { fields: [recipeRatings.userId], references: [user.id] }),
+}));
+
+export const savedRecipesRelations = relations(savedRecipes, ({ one }) => ({
+  recipe: one(recipes, { fields: [savedRecipes.recipeId], references: [recipes.id] }),
+  user: one(user, { fields: [savedRecipes.userId], references: [user.id] }),
+}));
+
+export const recipeCookLogsRelations = relations(recipeCookLogs, ({ one }) => ({
+  recipe: one(recipes, { fields: [recipeCookLogs.recipeId], references: [recipes.id] }),
+  user: one(user, { fields: [recipeCookLogs.userId], references: [user.id] }),
 }));
