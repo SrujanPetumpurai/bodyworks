@@ -3,6 +3,7 @@ import AccountMenu from "../AccountMenu";
 import IconBox from "./IconBox";
 import { BUILTIN, CheckIcon, FALLBACK_TYPE, typeFromCustom, type Category, type CustomType, type TypeDef } from "./icons";
 import type { GlyphKey, Shade } from "../../lib/workout-glyphs";
+import { GUEST_WORKOUTS_KEY, readGuest, writeGuest } from "../../lib/guest-store";
 import { MAX_OCCURRENCES, addDays, occurrenceDates, validateRule, weekdayOf, type RepeatRule } from "../../lib/workout-repeat";
 
 /* ---------- types ---------- */
@@ -105,6 +106,11 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
   const [custom, setCustom] = useState<CustomType[]>([]);
 
   const dragRef = useRef<Drag | null>(null);
+
+  // Visitors who aren't signed in keep their calendar in this browser (localStorage) instead of the database.
+  // `entries` then holds every planned workout, not just a window around the cursor.
+  const guestNext = useRef(1);
+  const [guestLoaded, setGuestLoaded] = useState(false);
   const dayScrollRef = useRef<HTMLDivElement>(null);
   const dayGridRef = useRef<HTMLDivElement>(null);
 
@@ -121,7 +127,12 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
   useEffect(() => {
     if (!ready) return;
     if (!signedIn) {
-      setEntries([]);
+      if (!guestLoaded) {
+        const blob = readGuest<Entry>(GUEST_WORKOUTS_KEY);
+        guestNext.current = blob.nextId;
+        setEntries(blob.items);
+        setGuestLoaded(true);
+      }
       return;
     }
     let cancelled = false;
@@ -132,7 +143,15 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
     return () => {
       cancelled = true;
     };
-  }, [signedIn, cursorYear, ready]);
+  }, [signedIn, cursorYear, ready, guestLoaded]);
+
+  // save guest changes (only after the first load, so an empty initial state never overwrites a saved plan)
+  useEffect(() => {
+    if (signedIn || !guestLoaded) return;
+    if (!writeGuest(GUEST_WORKOUTS_KEY, { nextId: guestNext.current, items: entries })) {
+      setError("Your browser wouldn't save the plan, so it will be lost when you leave.");
+    }
+  }, [entries, signedIn, guestLoaded]);
 
   useEffect(() => {
     if (!ready || !signedIn) {
@@ -168,6 +187,10 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
 
   /* ----- mutations (optimistic) ----- */
   async function create(input: NewEntry) {
+    if (!signedIn) {
+      setEntries((es) => [...es, { ...input, id: guestNext.current++ }]);
+      return;
+    }
     const tempId = -Date.now();
     setEntries((es) => [...es, { ...input, id: tempId }]);
     try {
@@ -193,6 +216,7 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
     const prev = entries.find((e) => e.id === id);
     if (!prev) return;
     setEntries((es) => es.map((e) => (e.id === id ? { ...e, ...changes } : e)));
+    if (!signedIn) return;
     const run = fetch(`/api/workouts/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -217,6 +241,7 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
     const gone = entries.filter((x) => x.id === entry.id || inSeries(x));
     const ids = new Set(gone.map((x) => x.id));
     setEntries((es) => es.filter((x) => !ids.has(x.id)));
+    if (!signedIn) return;
     try {
       const res = await fetch(`/api/workouts/${entry.id}?scope=${scope}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
@@ -229,6 +254,19 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
   // resolves to an error message, or null on success
   async function repeatEntry(entry: Entry, rule: RepeatRule): Promise<string | null> {
     if (entry.id < 0) return "Still saving — try again in a moment.";
+    if (!signedIn) {
+      // same rules the server applies, run here because guest plans never leave the browser
+      if (entry.seriesId) return "This workout already repeats. Delete the series to start over.";
+      const checked = validateRule(entry.date, rule);
+      if (!checked.ok) return checked.error;
+      const dates = occurrenceDates(entry.date, checked.rule);
+      if (dates.length === 0) return "That rule doesn't produce any new dates.";
+      if (dates.length > MAX_OCCURRENCES) return `That would add more than ${MAX_OCCURRENCES} workouts. Shorten the end date.`;
+      const seriesId = typeof crypto?.randomUUID === "function" ? crypto.randomUUID() : `s-${Date.now()}`;
+      const copies: Entry[] = dates.map((date) => ({ ...entry, id: guestNext.current++, date, completed: false, seriesId }));
+      setEntries((es) => [...es.map((x) => (x.id === entry.id ? { ...x, seriesId } : x)), ...copies]);
+      return null;
+    }
     await Promise.allSettled([...pending.current]);
     try {
       const res = await fetch(`/api/workouts/${entry.id}/repeat`, {
@@ -285,7 +323,6 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
 
   /* ----- placing things ----- */
   function place(ref: string, date: string, startMinutes: number | null) {
-    if (!signedIn) return setError("Sign in to plan workouts.");
     const base = { date, title: null, notes: null, startMinutes, durationMinutes: 60, completed: false, seriesId: null };
     create(
       ref.startsWith("t:")
@@ -628,7 +665,7 @@ export default function WorkoutCalendar({ signedIn }: { signedIn: boolean }) {
 
         {!signedIn && (
           <p className="wk-banner">
-            <a href="/auth?next=%2Fworkouts">Sign in</a> to plan and save workouts — your calendar is stored per account.
+            Your calendar is saved in this browser only. <a href="/auth?next=%2Fworkouts">Sign in</a> to keep it on your account and use it on any device.
           </p>
         )}
         {error && <p className="wk-banner wk-banner--error" role="alert">{error}</p>}
