@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { TONES, hash } from "./Avatar";
 import RecipeModal from "./RecipeModal";
 import type { RecipeSummary } from "./RecipesBrowser";
+import { GUEST_MEALS_KEY, readGuest, writeGuest } from "../../lib/guest-store";
 
 /* ---------- types ---------- */
 
@@ -92,6 +93,11 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
 
   const dragRef = useRef<Drag | null>(null);
 
+  // Visitors who aren't signed in keep their plan in this browser (localStorage) instead of the database.
+  // `meals` then holds every planned meal, not just the visible week (the grid only reads the days it shows).
+  const guestNext = useRef(1);
+  const [guestLoaded, setGuestLoaded] = useState(false);
+
   useEffect(() => {
     const k = keyOf(new Date());
     setTodayKey(k);
@@ -102,8 +108,14 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
 
   /* ----- load the visible week ----- */
   useEffect(() => {
-    if (!ready || !signedIn) {
-      setMeals([]);
+    if (!ready) return;
+    if (!signedIn) {
+      if (!guestLoaded) {
+        const blob = readGuest<Meal>(GUEST_MEALS_KEY);
+        guestNext.current = blob.nextId;
+        setMeals(blob.items);
+        setGuestLoaded(true);
+      }
       return;
     }
     let cancelled = false;
@@ -115,7 +127,15 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
     return () => {
       cancelled = true;
     };
-  }, [ready, signedIn, weekStart]);
+  }, [ready, signedIn, weekStart, guestLoaded]);
+
+  // save guest changes (only after the first load, so an empty initial state never overwrites a saved plan)
+  useEffect(() => {
+    if (signedIn || !guestLoaded) return;
+    if (!writeGuest(GUEST_MEALS_KEY, { nextId: guestNext.current, items: meals })) {
+      setError("Your browser wouldn't save the plan, so it will be lost when you leave.");
+    }
+  }, [meals, signedIn, guestLoaded]);
 
   useEffect(() => {
     if (!error) return;
@@ -151,6 +171,10 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
   async function create(slug: string, date: string, slot: Slot) {
     const recipe = bySlug.get(slug);
     if (!recipe) return;
+    if (!signedIn) {
+      setMeals((ms) => [...ms, { id: guestNext.current++, date, slot, slug, name: recipe.name, imageUrl: recipe.imageUrl }]);
+      return;
+    }
     const tempId = -Date.now();
     setMeals((ms) => [...ms, { id: tempId, date, slot, slug, name: recipe.name, imageUrl: recipe.imageUrl }]);
     try {
@@ -173,6 +197,7 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
     const prev = meals.find((m) => m.id === id);
     if (!prev || (prev.date === date && prev.slot === slot)) return;
     setMeals((ms) => ms.map((m) => (m.id === id ? { ...m, date, slot } : m)));
+    if (!signedIn) return;
     fetch(`/api/meal-plan/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -190,6 +215,7 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
   async function remove(meal: Meal) {
     if (meal.id < 0) return;
     setMeals((ms) => ms.filter((m) => m.id !== meal.id));
+    if (!signedIn) return;
     try {
       const res = await fetch(`/api/meal-plan/${meal.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
@@ -204,6 +230,7 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
     if (removed.length === 0) return;
     if (!confirm(`Remove all ${removed.length} planned ${removed.length === 1 ? "meal" : "meals"} on ${label}?`)) return;
     setMeals((ms) => ms.filter((m) => m.date !== date));
+    if (!signedIn) return;
     try {
       const res = await fetch(`/api/meal-plan?date=${date}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
@@ -215,7 +242,6 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
 
   /* ----- placing things ----- */
   function place(slug: string, date: string, slot: Slot) {
-    if (!signedIn) return setError("Sign in to plan meals.");
     create(slug, date, slot);
   }
 
@@ -309,7 +335,7 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
 
       {!signedIn && (
         <p className="mp-banner">
-          <a href="/auth?next=%2Frecipes">Sign in</a> to plan and save meals — your plan is stored per account.
+          Your plan is saved in this browser only. <a href="/auth?next=%2Frecipes">Sign in</a> to keep it on your account and use it on any device.
         </p>
       )}
       {error && <p className="mp-banner mp-banner--error" role="alert">{error}</p>}
@@ -385,7 +411,7 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
         </section>
 
         <aside className="mp-box" aria-label="Recipes">
-          <h3 className="mp-box-title">Your recipes</h3>
+          <h3 className="mp-box-title">{signedIn ? "Your recipes" : "Recipes"}</h3>
           <input
             className="mp-box-search"
             type="search"
@@ -396,7 +422,7 @@ export default function MealPlanner({ recipes, signedIn }: { recipes: RecipeSumm
           />
           <p className="mp-box-hint">Drag onto a slot, or tap one then tap a slot.</p>
           {recipes.length === 0 ? (
-            <p className="mp-box-hint">Nothing to plan with yet. <a href="/recipes/new">Add a recipe</a> or save some from <a href="/recipes#discover">Discover</a>.</p>
+            <p className="mp-box-hint">{signedIn ? <>Nothing to plan with yet. <a href="/recipes/new">Add a recipe</a> or save some from <a href="/recipes#discover">Discover</a>.</> : "No recipes to plan with yet."}</p>
           ) : shelf.length === 0 ? (
             <p className="mp-box-hint">No recipes match.</p>
           ) : (

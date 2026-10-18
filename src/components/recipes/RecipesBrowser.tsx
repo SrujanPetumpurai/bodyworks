@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import AccountMenu from "../AccountMenu";
 import Avatar from "./Avatar";
 import MealPlanner from "./MealPlanner";
@@ -66,22 +67,25 @@ export default function RecipesBrowser({
   const [show, setShow] = useState<Show>("all");
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
 
+  // the meal planner sits under "Recipes" for signed-in users and under Discover for visitors (who plan in this browser)
+  const showPlanner = view === "recipes" || !signedIn;
+
   // deep links: /recipes#plan and /recipes#discover (read after mount so server and client render match)
   useEffect(() => {
-    if (location.hash === "#plan" && signedIn) setScrollToPlan(true);
+    if (location.hash === "#plan") setScrollToPlan(true);
     else if (location.hash === "#discover") setView("discover");
-  }, [signedIn]);
+  }, []);
 
   // scroll to the meal plan once it is on screen (it isn't while Discover is showing)
   useEffect(() => {
-    if (!scrollToPlan || view !== "recipes") return;
+    if (!scrollToPlan || !showPlanner) return;
     document.getElementById("meal-plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
     setScrollToPlan(false);
-  }, [scrollToPlan, view]);
+  }, [scrollToPlan, showPlanner]);
 
   // highlight the "Meal plan" tab while the planner is what you're looking at
   useEffect(() => {
-    if (view !== "recipes") return setPlanInView(false);
+    if (!showPlanner) return setPlanInView(false);
     const el = document.getElementById("meal-plan");
     if (!el || typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver(([entry]) => setPlanInView(entry.isIntersecting), {
@@ -89,7 +93,7 @@ export default function RecipesBrowser({
     });
     io.observe(el);
     return () => io.disconnect();
-  }, [view, signedIn]);
+  }, [showPlanner]);
 
   useEffect(() => {
     if (!filtersOpen) return;
@@ -104,7 +108,7 @@ export default function RecipesBrowser({
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function goPlan() {
-    setView("recipes");
+    if (signedIn) setView("recipes");
     setScrollToPlan(true);
     history.replaceState(null, "", location.pathname + location.search + "#plan");
   }
@@ -164,11 +168,11 @@ export default function RecipesBrowser({
   }, [base, query, selected, authorId, minRating, view]);
 
   const activeFilters =
-    (query.trim() ? 1 : 0) +
     (selected.length ? 1 : 0) +
     (minRating ? 1 : 0) +
     (view === "discover" && authorId !== "all" ? 1 : 0) +
     (view === "recipes" && show !== "all" ? 1 : 0);
+  const anyActive = activeFilters > 0 || query.trim() !== "";
 
   function clearFilters() {
     setQuery("");
@@ -235,23 +239,30 @@ export default function RecipesBrowser({
       <div className="mp-tabbar">
         <div className="mp-tabs" role="tablist" aria-label="Recipes sections">
           {signedIn && (
-            <>
-              <button type="button" role="tab" aria-selected={view === "recipes" && !planInView} className={tabClass(view === "recipes" && !planInView)} onClick={goRecipes}>
-                Recipes
-              </button>
-              <button type="button" role="tab" aria-selected={view === "recipes" && planInView} className={tabClass(view === "recipes" && planInView)} onClick={goPlan}>
-                Meal plan
-              </button>
-            </>
+            <button type="button" role="tab" aria-selected={view === "recipes" && !planInView} className={tabClass(view === "recipes" && !planInView)} onClick={goRecipes}>
+              Recipes
+            </button>
           )}
-          <button type="button" role="tab" aria-selected={view === "discover"} className={tabClass(view === "discover")} onClick={goDiscover}>
+          <button type="button" role="tab" aria-selected={planInView} className={tabClass(planInView)} onClick={goPlan}>
+            Meal plan
+          </button>
+          <button type="button" role="tab" aria-selected={view === "discover" && !planInView} className={tabClass(view === "discover" && !planInView)} onClick={goDiscover}>
             Discover
           </button>
         </div>
 
         <div className="mp-tabbar-actions">
           {view === "discover" && <a className="rb-btn" href="/communities">Communities</a>}
-          {signedIn && <a className="rb-btn" href="/recipes/new">+ Add recipe</a>}
+          <div className="rb-toolbar-search">
+            <Search size={16} aria-hidden="true" />
+            <input
+              type="search"
+              placeholder="Search recipes"
+              aria-label="Search recipes"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
           <button type="button" className="rb-btn rb-filter-btn" onClick={() => setFiltersOpen(true)} aria-haspopup="dialog">
             Filters{activeFilters > 0 && <span className="rb-filter-count">{activeFilters}</span>}
           </button>
@@ -274,7 +285,7 @@ export default function RecipesBrowser({
           ) : (
             <p className="rb-empty">
               No recipes match.{" "}
-              {activeFilters > 0 && <button type="button" className="rb-linkbtn" onClick={clearFilters}>Clear filters</button>}
+              {anyActive && <button type="button" className="rb-linkbtn" onClick={clearFilters}>Clear filters</button>}
             </p>
           )
         ) : (
@@ -292,9 +303,9 @@ export default function RecipesBrowser({
         )}
       </div>
 
-      {view === "recipes" && signedIn && (
+      {showPlanner && (
         <section id="meal-plan" className="rb-plan-section" aria-label="Meal plan">
-          <MealPlanner recipes={library} signedIn={signedIn} />
+          <MealPlanner recipes={signedIn ? library : recipes} signedIn={signedIn} />
         </section>
       )}
 
@@ -307,18 +318,6 @@ export default function RecipesBrowser({
             </div>
 
             <div className="rb-fmodal-body">
-              <div>
-                <label className="rb-field-label" htmlFor="rb-search">Search</label>
-                <input
-                  id="rb-search"
-                  className="rb-search"
-                  type="search"
-                  placeholder="Search recipes"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </div>
-
               <div>
                 <label className="rb-field-label" htmlFor="rb-ing">Ingredients you have</label>
                 <div className="rb-ing-field">
@@ -431,7 +430,7 @@ export default function RecipesBrowser({
             </div>
 
             <div className="rb-fmodal-foot">
-              <button type="button" className="rb-btn" onClick={clearFilters} disabled={activeFilters === 0}>Clear all</button>
+              <button type="button" className="rb-btn" onClick={clearFilters} disabled={!anyActive}>Clear all</button>
               <button type="button" className="rb-btn rb-btn-solid" onClick={() => setFiltersOpen(false)}>
                 Show {filtered.length} {filtered.length === 1 ? "recipe" : "recipes"}
               </button>

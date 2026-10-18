@@ -469,3 +469,20 @@ html:not([data-theme="dark"]) .rb-page { background:
 .rb-card:hover { border-color: var(--cta); box-shadow: 0 0 28px -6px rgba(237, 184, 67, 0.25), var(--shadow); }
 .rb-wordmark, .rb-logo { color: var(--ink) !important; }
 .rb-wordmark::after, .rb-logo::after { content: "."; color: var(--cta); }
+
+/* ---------- recipes toolbar search (sits left of Filters) ---------- */
+.rb-toolbar-search {
+  position: relative; display: flex; align-items: center; flex: 1 1 260px; min-width: 200px; max-width: 360px;
+}
+.rb-toolbar-search svg { position: absolute; left: 0.95rem; color: var(--sub); pointer-events: none; }
+.rb-toolbar-search input {
+  width: 100%; box-sizing: border-box; padding: 0.58rem 1rem 0.58rem 2.5rem; border-radius: 999px;
+  background: var(--glass); color: var(--ink); border: 1px solid var(--rule); font: 500 0.92rem var(--font-body);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+}
+.rb-toolbar-search input::placeholder { color: var(--sub); }
+.rb-toolbar-search input:focus { outline: 2px solid var(--cta); outline-offset: 1px; border-color: var(--cta); }
+@media (max-width: 760px) {
+  .mp-tabbar-actions { width: 100%; flex-wrap: wrap; }
+  .rb-toolbar-search { flex: 1 1 100%; max-width: none; order: -1; }
+}
