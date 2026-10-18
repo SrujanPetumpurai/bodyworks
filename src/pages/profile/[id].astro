@@ -2,6 +2,7 @@
 export const prerender = false;
 import ProfileView from "../../components/profile/ProfileView";
 import { getProfile, listRecipes } from "../../db/recipes";
+import { listSavedSlugs } from "../../db/saved-recipes";
 import "../../styles/recipes.css";
 import "../../styles/profile.css";
 import "../../styles/forms.css";
@@ -10,9 +11,21 @@ const { id } = Astro.params;
 const profile = id ? await getProfile(id) : null;
 if (!profile) return new Response("Profile not found", { status: 404 });
 
-const recipes = await listRecipes({ authorId: profile.id, viewerId: Astro.locals.user?.id });
+const viewer = Astro.locals.user;
+const isOwner = viewer?.id === profile.id;
 
-const tab = Astro.url.searchParams.get("tab") === "recipes" ? "recipes" : "home";
+const [recipes, viewerSavedSlugs] = await Promise.all([
+  listRecipes({ authorId: profile.id, viewerId: viewer?.id }),
+  viewer ? listSavedSlugs(viewer.id) : Promise.resolve([] as string[]),
+]);
+
+// the "Saved" tab is private: only the profile's owner gets it
+const savedSet = new Set(viewerSavedSlugs);
+const savedRecipes =
+  isOwner && savedSet.size > 0 ? (await listRecipes({ viewerId: viewer!.id })).filter((r) => savedSet.has(r.slug)) : [];
+
+const wantedTab = Astro.url.searchParams.get("tab");
+const tab = wantedTab === "recipes" ? "recipes" : wantedTab === "saved" && isOwner ? "saved" : "home";
 const sort = Astro.url.searchParams.get("sort") === "top" ? "top" : "recent";
 
 const data = {
@@ -38,6 +51,16 @@ const data = {
     />
   </head>
   <body>
-    <ProfileView profile={data} isOwner={Astro.locals.user?.id === profile.id} recipes={recipes} initialTab={tab} initialSort={sort} client:load />
+    <ProfileView
+      profile={data}
+      isOwner={isOwner}
+      viewerId={viewer?.id ?? null}
+      recipes={recipes}
+      savedRecipes={savedRecipes}
+      savedSlugs={viewerSavedSlugs}
+      initialTab={tab}
+      initialSort={sort}
+      client:load
+    />
   </body>
 </html>

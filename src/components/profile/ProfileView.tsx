@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AccountMenu from "../AccountMenu";
 import ImageUpload from "../forms/ImageUpload";
 import Avatar, { TONES, hash } from "../recipes/Avatar";
-import RecipeCard from "../recipes/RecipeCard";
+import RecipeCard, { type CardAction } from "../recipes/RecipeCard";
 import RecipeModal from "../recipes/RecipeModal";
 import type { RecipeSummary } from "../recipes/RecipesBrowser";
 
@@ -13,12 +13,13 @@ type Profile = {
   banner: string | null;
   joinedAt: string;
 };
-type Tab = "home" | "recipes";
+type Tab = "home" | "recipes" | "saved";
 type Sort = "recent" | "top";
 
-const TABS: { id: Tab; label: string }[] = [
+const TABS: { id: Tab; label: string; ownerOnly?: boolean }[] = [
   { id: "home", label: "Home" },
   { id: "recipes", label: "Recipes" },
+  { id: "saved", label: "Saved", ownerOnly: true },
 ];
 const SORTS: { id: Sort; label: string }[] = [
   { id: "recent", label: "Recent" },
@@ -32,13 +33,19 @@ const byTop = (a: RecipeSummary, b: RecipeSummary) =>
 export default function ProfileView({
   profile,
   isOwner,
-  recipes,
+  viewerId,
+  recipes: initialRecipes,
+  savedRecipes: initialSaved,
+  savedSlugs,
   initialTab,
   initialSort,
 }: {
   profile: Profile;
   isOwner: boolean;
+  viewerId: string | null;
   recipes: RecipeSummary[];
+  savedRecipes: RecipeSummary[];
+  savedSlugs: string[];
   initialTab: Tab;
   initialSort: Sort;
 }) {
@@ -46,6 +53,14 @@ export default function ProfileView({
   const [sort, setSort] = useState<Sort>(initialSort);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+
+  // lists live in state so delete / unsave update the page without a reload
+  const [recipes, setRecipes] = useState(initialRecipes);
+  const [savedList, setSavedList] = useState(initialSaved);
+  const [saved, setSaved] = useState<Set<string>>(() => new Set(savedSlugs));
+  const [toDelete, setToDelete] = useState<RecipeSummary | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const recent = useMemo(() => [...recipes].sort(byRecent), [recipes]);
   const top = useMemo(() => [...recipes].filter((r) => r.ratingCount > 0).sort(byTop), [recipes]);
@@ -59,11 +74,65 @@ export default function ProfileView({
     setTab(nextTab);
     setSort(nextSort);
     const q = new URLSearchParams();
-    if (nextTab === "recipes") q.set("tab", "recipes");
+    if (nextTab !== "home") q.set("tab", nextTab);
     if (nextTab === "recipes" && nextSort === "top") q.set("sort", "top");
     const qs = q.toString();
     history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
   }
+
+  useEffect(() => {
+    if (!toDelete || busy) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setToDelete(null);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [toDelete, busy]);
+
+  async function toggleSave(r: RecipeSummary) {
+    const next = !saved.has(r.slug);
+    setNotice(null);
+    const res = await fetch(`/api/recipes/${r.slug}/save`, { method: next ? "POST" : "DELETE" }).catch(() => null);
+    if (!res || !res.ok) return setNotice("Couldn't update your saved recipes.");
+    setSaved((prev) => {
+      const copy = new Set(prev);
+      if (next) copy.add(r.slug);
+      else copy.delete(r.slug);
+      return copy;
+    });
+    // saving from someone else's profile shouldn't need a reload to show up under Saved
+    setSavedList((list) => (next ? (list.some((x) => x.slug === r.slug) ? list : [r, ...list]) : list.filter((x) => x.slug !== r.slug)));
+  }
+
+  async function confirmDelete() {
+    if (!toDelete) return;
+    setBusy(true);
+    setNotice(null);
+    const res = await fetch(`/api/recipes/${toDelete.slug}`, { method: "DELETE" }).catch(() => null);
+    setBusy(false);
+    if (!res || !res.ok) {
+      setToDelete(null);
+      return setNotice("Couldn't delete the recipe. Try again.");
+    }
+    const slug = toDelete.slug;
+    setRecipes((list) => list.filter((x) => x.slug !== slug));
+    setSavedList((list) => list.filter((x) => x.slug !== slug));
+    setToDelete(null);
+  }
+
+  // what the ⋯ menu offers: your own recipes can be edited or deleted; anyone else's can be saved
+  function actionsFor(r: RecipeSummary): CardAction[] {
+    if (!viewerId) return [];
+    if (r.authorId === viewerId) {
+      return [
+        { label: "Edit", href: `/recipes/${r.slug}/edit` },
+        { label: "Delete", danger: true, onClick: () => setToDelete(r) },
+      ];
+    }
+    return [{ label: saved.has(r.slug) ? "Remove from saved" : "Save", onClick: () => toggleSave(r) }];
+  }
+
+  const card = (r: RecipeSummary) => (
+    <RecipeCard key={r.slug} recipe={r} onClick={() => setActiveSlug(r.slug)} actions={actionsFor(r)} />
+  );
 
   const c1 = TONES[hash(profile.name) % TONES.length];
   const c2 = TONES[(hash(profile.name) + 1) % TONES.length];
@@ -107,7 +176,7 @@ export default function ProfileView({
         {isOwner && editing && <ProfileEditor profile={profile} onDone={() => location.reload()} />}
 
         <nav className="pf-tabs" role="tablist" aria-label="Profile sections">
-          {TABS.map((t) => (
+          {TABS.filter((t) => !t.ownerOnly || isOwner).map((t) => (
             <button
               key={t.id}
               type="button"
@@ -121,7 +190,17 @@ export default function ProfileView({
           ))}
         </nav>
 
-        {recipes.length === 0 ? (
+        {notice && <p className="rb-msg" role="alert">{notice}</p>}
+
+        {tab === "saved" && isOwner ? (
+          savedList.length === 0 ? (
+            <p className="rb-empty">
+              Nothing saved yet. <a href="/recipes#discover">Discover recipes</a> and choose Save from the ⋯ menu on the ones you like.
+            </p>
+          ) : (
+            <div className="rb-grid pf-grid">{savedList.map(card)}</div>
+          )
+        ) : recipes.length === 0 ? (
           <p className="rb-empty">
             {isOwner ? (
               <>You haven't posted any recipes yet. <a href="/recipes/new">Add your first one</a>.</>
@@ -134,7 +213,7 @@ export default function ProfileView({
             <Shelf
               title="Latest"
               recipes={recent.slice(0, 3)}
-              onOpen={setActiveSlug}
+              renderCard={card}
               onMore={() => update("recipes", "recent")}
               moreLabel="View all"
             />
@@ -142,7 +221,7 @@ export default function ProfileView({
               <Shelf
                 title="Top rated"
                 recipes={top.slice(0, 3)}
-                onOpen={setActiveSlug}
+                renderCard={card}
                 onMore={() => update("recipes", "top")}
                 moreLabel="See more"
               />
@@ -164,15 +243,30 @@ export default function ProfileView({
               ))}
             </div>
             <div className="rb-grid pf-grid">
-              {sorted.map((r) => (
-                <RecipeCard key={r.slug} recipe={r} onClick={() => setActiveSlug(r.slug)} />
-              ))}
+              {sorted.map(card)}
             </div>
           </>
         )}
       </div>
 
       {activeSlug && <RecipeModal slug={activeSlug} onClose={() => setActiveSlug(null)} />}
+
+      {toDelete && (
+        <div className="rb-overlay open" onClick={(e) => e.target === e.currentTarget && !busy && setToDelete(null)}>
+          <div className="rb-confirm" role="alertdialog" aria-modal="true" aria-labelledby="rb-confirm-title" aria-describedby="rb-confirm-text">
+            <h2 id="rb-confirm-title">Delete recipe?</h2>
+            <p id="rb-confirm-text">
+              “{toDelete.name}” will be removed for good, along with its ratings and cook log. This can't be undone.
+            </p>
+            <div className="rb-confirm-actions">
+              <button type="button" className="rb-btn" onClick={() => setToDelete(null)} disabled={busy} autoFocus>Cancel</button>
+              <button type="button" className="rb-btn rb-btn-danger" onClick={confirmDelete} disabled={busy}>
+                {busy ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -180,13 +274,13 @@ export default function ProfileView({
 function Shelf({
   title,
   recipes,
-  onOpen,
+  renderCard,
   onMore,
   moreLabel,
 }: {
   title: string;
   recipes: RecipeSummary[];
-  onOpen: (slug: string) => void;
+  renderCard: (r: RecipeSummary) => React.ReactNode;
   onMore: () => void;
   moreLabel: string;
 }) {
@@ -197,9 +291,7 @@ function Shelf({
         <button type="button" onClick={onMore}>{moreLabel} →</button>
       </div>
       <div className="rb-grid pf-grid">
-        {recipes.map((r) => (
-          <RecipeCard key={r.slug} recipe={r} onClick={() => onOpen(r.slug)} />
-        ))}
+        {recipes.map(renderCard)}
       </div>
     </section>
   );

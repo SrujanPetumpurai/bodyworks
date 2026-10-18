@@ -486,3 +486,64 @@ html:not([data-theme="dark"]) .rb-page { background:
   .mp-tabbar-actions { width: 100%; flex-wrap: wrap; }
   .rb-toolbar-search { flex: 1 1 100%; max-width: none; order: -1; }
 }
+
+/* ---------- recipe dialog: labelled tabs + back/next instead of tiny dots ---------- */
+.rb-modal { max-width: 520px; height: min(640px, 90vh); }
+.rb-modal-head h2 { font-size: 1.6rem; }
+.rb-modal-tabs {
+  display: flex; gap: 0.25rem; margin: 0.9rem 0 0; padding: 4px; border-radius: 999px;
+  background: var(--bg); border: 1px solid var(--edge);
+}
+.rb-modal-tabs button {
+  flex: 1; border: none; background: none; cursor: pointer; color: var(--sub); border-radius: 999px;
+  font: 700 0.8rem var(--font-body); padding: 0.5rem 0.3rem; white-space: nowrap; transition: background 160ms, color 160ms;
+}
+.rb-modal-tabs button:hover { color: var(--ink); }
+.rb-modal-tabs button.on { background: var(--cta); color: var(--on-cta); }
+.rb-modal-nav { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding-top: 0.2rem; }
+.rb-modal-nav .rb-btn { min-width: 8.5rem; padding: 0.7rem 1rem; }
+.rb-modal-count { color: var(--sub); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; }
+@media (max-width: 480px) {
+  .rb-overlay { padding: 0.6rem; }
+  .rb-modal { padding: 1.2rem 1rem 0.9rem; }
+  .rb-modal-tabs button { font-size: 0.72rem; }
+  .rb-modal-nav .rb-btn { min-width: 0; flex: 1; }
+  .rb-modal-count { display: none; }
+}
+
+/* ---------- card ⋯ menu ---------- */
+.rb-card { position: relative; }
+.rb-card.has-menu .rb-card-cuisine { right: 3.9rem; }
+.rb-cardmenu { position: absolute; top: calc(8px + 0.65rem); right: calc(8px + 0.65rem); z-index: 4; }
+.rb-cardmenu-btn {
+  width: 36px; height: 36px; display: grid; place-items: center; cursor: pointer; color: var(--ink);
+  border-radius: 50%; border: 1px solid var(--glass-edge); background: var(--glass);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); transition: border-color 160ms, color 160ms, background 160ms;
+}
+.rb-cardmenu-btn:hover, .rb-cardmenu-btn[aria-expanded="true"] { border-color: var(--cta); color: var(--cta); }
+.rb-cardmenu-list {
+  position: absolute; top: calc(100% + 6px); right: 0; min-width: 170px; padding: 0.35rem;
+  display: flex; flex-direction: column; border-radius: 14px; border: 1px solid var(--glass-edge);
+  background: var(--paper); box-shadow: var(--shadow-lg);
+}
+.rb-cardmenu-list a, .rb-cardmenu-list button {
+  padding: 0.55rem 0.75rem; text-align: left; text-decoration: none; border: none; background: none; cursor: pointer;
+  border-radius: 8px; color: var(--ink) !important; font: 600 0.9rem var(--font-body);
+}
+.rb-cardmenu-list a:hover, .rb-cardmenu-list button:hover { background: var(--raise); }
+.rb-cardmenu-list .danger { color: var(--warn) !important; }
+
+/* ---------- delete confirmation ---------- */
+.rb-confirm {
+  width: 100%; max-width: 400px; box-sizing: border-box; padding: 1.5rem 1.6rem 1.3rem; color: var(--ink);
+  background: var(--glass); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  border: 1px solid var(--glass-edge); border-radius: 22px; box-shadow: var(--shadow-lg);
+}
+.rb-confirm h2 { margin: 0 0 0.5rem; font-size: 1.4rem; }
+.rb-confirm p { margin: 0 0 1.2rem; color: var(--sub); }
+.rb-confirm-actions { display: flex; justify-content: flex-end; gap: 0.6rem; }
+.rb-page .rb-btn.rb-btn-danger, .rb-overlay .rb-btn.rb-btn-danger { background: var(--warn); border-color: var(--warn); color: #1a0d07 !important; }
+.rb-page .rb-btn.rb-btn-danger:hover:not(:disabled), .rb-overlay .rb-btn.rb-btn-danger:hover:not(:disabled) { filter: brightness(1.08); background: var(--warn); border-color: var(--warn); }
+
+/* the top bar's blur makes it its own layer; lift it so the account menu opens above the sticky tab bar */
+.rb-topbar, .pf-topbar { position: relative; z-index: 40; }
