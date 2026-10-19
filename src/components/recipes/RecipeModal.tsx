@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "../../lib/auth-client";
 import CookLog from "./CookLog";
 
@@ -18,7 +18,7 @@ type Detail = {
   steps: { id: number; stepNumber: number; instruction: string }[];
 };
 
-const PAGES = ["Ingredients", "Steps", "Cook log", "Rate"] as const;
+const PAGES = ["Ingredients", "Steps", "Cook log", "About"] as const;
 
 export default function RecipeModal({
   slug,
@@ -40,6 +40,16 @@ export default function RecipeModal({
   const [count, setCount] = useState(0);
   const [hover, setHover] = useState<number | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const swipe = useRef<{ x: number; y: number } | null>(null);
+
+  const last = PAGES.length - 1;
+  const go = (n: number) => setPage(Math.max(0, Math.min(n, last)));
+
+  // each page starts at the top
+  useEffect(() => {
+    contentRef.current?.scrollTo({ top: 0 });
+  }, [page]);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,15 +126,51 @@ export default function RecipeModal({
         {recipe && (
           <>
             <div className="rb-modal-head">
-              <h2>{PAGES[page]}</h2>
+              <h2>{recipe.name}</h2>
               <p className="rb-modal-sub">
-                {recipe.name}
-                {recipe.prepTimeMinutes != null && ` · ${recipe.prepTimeMinutes} min`}
-                {recipe.servings != null && ` · serves ${recipe.servings}`}
+                {[
+                  recipe.prepTimeMinutes != null && `${recipe.prepTimeMinutes} min`,
+                  recipe.servings != null && `serves ${recipe.servings}`,
+                  recipe.difficulty,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
             </div>
 
-            <div className="rb-modal-content">
+            <div className="rb-modal-tabs" role="tablist" aria-label="Recipe sections">
+              {PAGES.map((p, i) => (
+                <button
+                  key={p}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === page}
+                  className={i === page ? "on" : ""}
+                  onClick={() => setPage(i)}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            <div
+              className="rb-modal-content"
+              ref={contentRef}
+              onTouchStart={(e) => {
+                const t = e.touches[0];
+                swipe.current = { x: t.clientX, y: t.clientY };
+              }}
+              onTouchEnd={(e) => {
+                const start = swipe.current;
+                swipe.current = null;
+                if (!start) return;
+                const t = e.changedTouches[0];
+                const dx = t.clientX - start.x;
+                const dy = t.clientY - start.y;
+                // a clear sideways swipe turns the page; mostly-vertical drags are just scrolling
+                if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(page + (dx < 0 ? 1 : -1));
+              }}
+            >
               {page === 0 && (
                 <ul className="rb-list">
                   {recipe.ingredients.map((ri) => (
@@ -197,16 +243,14 @@ export default function RecipeModal({
               )}
             </div>
 
-            <div className="rb-dots">
-              {PAGES.map((p, i) => (
-                <button
-                  key={p}
-                  type="button"
-                  className={i === page ? "on" : ""}
-                  onClick={() => setPage(i)}
-                  aria-label={p}
-                />
-              ))}
+            <div className="rb-modal-nav">
+              <button type="button" className="rb-btn" onClick={() => go(page - 1)} style={{ visibility: page === 0 ? "hidden" : "visible" }}>
+                ← {PAGES[Math.max(page - 1, 0)]}
+              </button>
+              <span className="rb-modal-count">{page + 1} / {PAGES.length}</span>
+              <button type="button" className="rb-btn rb-btn-solid" onClick={() => go(page + 1)} style={{ visibility: page === last ? "hidden" : "visible" }}>
+                {PAGES[Math.min(page + 1, last)]} →
+              </button>
             </div>
           </>
         )}
