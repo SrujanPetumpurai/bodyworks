@@ -72,6 +72,12 @@ export default function RecipeForm({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // "Import from YouTube": fills the form below from a video link; nothing is saved until you press save
+  const [ytUrl, setYtUrl] = useState("");
+  const [ytBusy, setYtBusy] = useState(false);
+  const [ytError, setYtError] = useState<string | null>(null);
+  const [ytDone, setYtDone] = useState<{ title: string; channel: string; fromComments: boolean; guesses: string[] } | null>(null);
+
   const set = <K extends keyof RecipeFormValues>(key: K, value: RecipeFormValues[K]) =>
     setV((s) => ({ ...s, [key]: value }));
 
@@ -88,6 +94,40 @@ export default function RecipeForm({
   const setIng = (i: number, patch: Partial<RecipeFormValues["ingredients"][number]>) =>
     set("ingredients", v.ingredients.map((x, j) => (j === i ? { ...x, ...patch } : x)));
   const setStep = (i: number, text: string) => set("steps", v.steps.map((x, j) => (j === i ? text : x)));
+
+  async function importYoutube() {
+    const url = ytUrl.trim();
+    if (!url || ytBusy) return;
+    const hasWork = v.name.trim() || v.steps.some((x) => x.trim()) || v.ingredients.some((i) => i.name.trim());
+    if (hasWork && !confirm("Importing will replace the name, ingredients and steps you've typed. Continue?")) return;
+    setYtError(null);
+    setYtDone(null);
+    setYtBusy(true);
+    const res = await fetch("/api/recipes/import-youtube", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setYtBusy(false);
+    if (!res || !res.ok) return setYtError(data?.error || "Couldn't import that video. Check your connection and try again.");
+
+    const r = data.recipe;
+    setV((s) => ({
+      ...s,
+      name: r.name,
+      description: r.description,
+      cuisine: r.cuisine,
+      prepTimeMinutes: r.prepTimeMinutes,
+      servings: r.servings,
+      difficulty: r.difficulty,
+      imageUrl: r.imageUrl ?? s.imageUrl,
+      videoUrl: r.videoUrl,
+      ingredients: r.ingredients,
+      steps: r.steps,
+    }));
+    setYtDone({ ...data.source, guesses: r.guesses ?? [] });
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -112,6 +152,46 @@ export default function RecipeForm({
   return (
     <form className="rf" onSubmit={submit}>
       <h1>{editSlug ? "Edit recipe" : "Add a recipe"}</h1>
+
+      {!editSlug && (
+        <section className="rf-import" aria-label="Import from YouTube">
+          <label className="af-field" htmlFor="rf-yt">
+            Import from YouTube
+            <span className="rf-import-hint">Paste a video or Short link. We read the description and the creator's pinned comment, then fill in the form for you to check.</span>
+          </label>
+          <div className="rf-import-row">
+            <input
+              id="rf-yt"
+              type="url"
+              inputMode="url"
+              placeholder="https://youtube.com/shorts/…"
+              value={ytUrl}
+              onChange={(e) => setYtUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  importYoutube();
+                }
+              }}
+            />
+            <button type="button" className="rb-btn rb-btn-solid" onClick={importYoutube} disabled={ytBusy || !ytUrl.trim()}>
+              {ytBusy ? "Reading video…" : "Import"}
+            </button>
+          </div>
+          {ytError && <p className="rb-msg" role="alert">{ytError}</p>}
+          {ytDone && (
+            <div className="rf-import-done" role="status">
+              <p>
+                Filled in from “{ytDone.title}” by {ytDone.channel}
+                {ytDone.fromComments ? " (including the creator's comment)" : ""}. Check the amounts and steps, then save.
+              </p>
+              {ytDone.guesses.length > 0 && (
+                <p>Worth a second look: {ytDone.guesses.join("; ")}.</p>
+              )}
+            </div>
+          )}
+        </section>
+      )}
 
       <label className="af-field">
         Name

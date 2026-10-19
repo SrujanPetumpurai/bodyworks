@@ -108,3 +108,18 @@
   border: 1px solid var(--rule); background: var(--paper); color: var(--ink);
 }
 .rb-theme-btn:hover { border-color: var(--cta); color: var(--cta); }
+
+/* import from YouTube (top of the Add recipe form) */
+.rf-import {
+  display: flex; flex-direction: column; gap: 0.6rem; padding: 1rem 1.1rem; border-radius: 14px;
+  background: var(--glass, var(--raise)); border: 1px dashed var(--rule);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+}
+.rf-import .af-field { margin: 0; }
+.rf-import-hint { display: block; margin-top: 0.15rem; color: var(--sub); font-size: 0.85rem; font-weight: 500; }
+.rf-import-row { display: flex; gap: 0.6rem; }
+.rf-import-row input { flex: 1; min-width: 0; }
+.rf-import-done { padding: 0.7rem 0.9rem; border-radius: 10px; border: 1px solid var(--glass-edge, var(--rule)); background: var(--paper); }
+.rf-import-done p { margin: 0; font-size: 0.9rem; }
+.rf-import-done p + p { margin-top: 0.35rem; color: var(--sub); }
+@media (max-width: 520px) { .rf-import-row { flex-direction: column; } }
