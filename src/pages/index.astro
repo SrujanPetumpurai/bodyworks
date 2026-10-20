@@ -1,115 +1,34 @@
 ---
 export const prerender = false;
 import AccountMenu from "../components/AccountMenu";
+import LandingHero from "../components/landing/LandingHero";
 import "../styles/recipes.css";
 import "../styles/forms.css";
 import "../styles/landing.css";
+import "../styles/sunrise.css";
 ---
 
-<!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script is:inline>try{var t=localStorage.getItem("bw-theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="light"}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Bodyworks — same goal, two ways</title>
+    <title>Bodyworks — plan your workouts and your meals</title>
     <meta name="description" content="Plan your workouts, save recipes, and build a healthier routine with Bodyworks." />
-    <meta name="theme-color" content="#100e0b" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Anton&family=Manrope:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
   </head>
   <body>
     <div class="rb-page lp">
-      <div class="lp-atmosphere" aria-hidden="true">
-        <div class="lp-atmosphere__photo lp-atmosphere__photo--gym"></div>
-        <div class="lp-atmosphere__photo lp-atmosphere__photo--kitchen"></div>
-        <div class="lp-atmosphere__shade"></div>
-        <div class="lp-grain"></div>
-      </div>
-
       <header class="lp-top">
-        <a href="/" class="lp-wordmark" aria-label="Bodyworks home">BODYWORKS<span>.</span></a>
-        <div class="lp-top-right">
-          <span class="lp-top-note">Train with intent. Eat with joy.</span>
-          <AccountMenu showThemeToggle={false} client:load />
-        </div>
+        <a href="/" class="lp-wordmark" aria-label="Bodyworks home">bodyworks<span>.</span></a>
+        <nav class="lp-nav" aria-label="Main">
+          <a href="/workouts">Workouts</a>
+          <a href="/recipes">Recipes</a>
+        </nav>
+        <AccountMenu client:load />
       </header>
-
       <main class="lp-main">
-        <section class="lp-heading" aria-labelledby="lp-title">
-          <p class="lp-eyebrow"><span></span> YOUR ROUTINE STARTS HERE <span></span></p>
-          <h1 id="lp-title">SAME GOAL.<br /><em>TWO WAYS.</em></h1>
-          <p class="lp-subtitle">Train harder. Eat better. Build a healthier you.</p>
-        </section>
-
-        <section class="lp-choices" aria-label="Choose your Bodyworks space">
-          <a class="lp-choice lp-choice--workouts" href="/workouts" aria-label="Enter Workouts">
-            <div class="lp-choice-photo" aria-hidden="true"></div>
-            <div class="lp-choice-tint" aria-hidden="true"></div>
-            <div class="lp-card-grid" aria-hidden="true"></div>
-            <div class="lp-card-particles lp-card-particles--gym" aria-hidden="true"></div>
-
-            <div class="lp-choice-meta">
-              <span>01 <i>/</i> MOVE</span>
-              <span class="lp-choice-orbit" aria-hidden="true">↗</span>
-            </div>
-
-            <div class="lp-choice-body">
-              <span class="lp-choice-icon lp-choice-icon--gym" aria-hidden="true">
-                <svg viewBox="0 0 48 48" fill="none"><path d="M8 17v14M14 12v24M34 12v24M40 17v14M14 24h20M4 20v8M44 20v8" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </span>
-              <p class="lp-choice-kicker">BUILD YOUR ROUTINE</p>
-              <h2>WORK<br />OUTS<span>.</span></h2>
-              <p class="lp-choice-description">Plan your sessions. Build consistency. Track every rep.</p>
-              <ul class="lp-mini-list" aria-label="Workout features">
-                <li>Plan</li><li>Execute</li><li>Track</li><li>Repeat</li>
-              </ul>
-              <span class="lp-choice-action">ENTER WORKOUTS <b aria-hidden="true">⟶</b></span>
-            </div>
-
-            <span class="lp-card-stamp" aria-hidden="true">BODYWORKS <b>01</b></span>
-            <span class="lp-card-corner lp-card-corner--one" aria-hidden="true"></span>
-            <span class="lp-card-corner lp-card-corner--two" aria-hidden="true"></span>
-          </a>
-
-          <a class="lp-choice lp-choice--recipes" href="/recipes" aria-label="Explore Recipes">
-            <div class="lp-choice-photo" aria-hidden="true"></div>
-            <div class="lp-choice-tint" aria-hidden="true"></div>
-            <div class="lp-card-grid" aria-hidden="true"></div>
-            <div class="lp-card-particles lp-card-particles--food" aria-hidden="true"></div>
-
-            <div class="lp-choice-meta">
-              <span>02 <i>/</i> FUEL</span>
-              <span class="lp-choice-orbit" aria-hidden="true">↗</span>
-            </div>
-
-            <div class="lp-choice-body">
-              <span class="lp-choice-icon lp-choice-icon--food" aria-hidden="true">
-                <svg viewBox="0 0 48 48" fill="none"><path d="M24 7v5M13 11l3 4M35 11l-3 4M10 24a14 14 0 0 1 28 0c0 8-6 14-14 14S10 32 10 24Z" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M16 26c3-4 5 4 8 0s5 4 8 0" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-              </span>
-              <p class="lp-choice-kicker">MAKE GOOD FOOD HAPPEN</p>
-              <h2>RECI<br />PES<span>.</span></h2>
-              <p class="lp-choice-description">Save what you love. Plan your meals. Keep your kitchen notes.</p>
-              <ul class="lp-mini-list" aria-label="Recipe features">
-                <li>Discover</li><li>Save</li><li>Plan</li><li>Cook</li>
-              </ul>
-              <span class="lp-choice-action">EXPLORE RECIPES <b aria-hidden="true">⟶</b></span>
-            </div>
-
-            <span class="lp-card-stamp" aria-hidden="true">BODYWORKS <b>02</b></span>
-            <span class="lp-card-corner lp-card-corner--one" aria-hidden="true"></span>
-            <span class="lp-card-corner lp-card-corner--two" aria-hidden="true"></span>
-          </a>
-        </section>
-
-        <footer class="lp-footer">
-          <span>MOVE WITH PURPOSE.</span>
-          <span class="lp-footer-mark"><i></i> TWO SIDES OF A BETTER ROUTINE <i></i></span>
-          <span>FUEL YOUR EVERYDAY.</span>
-        </footer>
+        <LandingHero client:load />
+        <footer class="lp-footer">Move with purpose. Fuel your everyday.</footer>
       </main>
     </div>
   </body>

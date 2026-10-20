@@ -1,0 +1,80 @@
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap");
+
+/* "Sunrise" theme: butter yellow, tomato coral, blush pink and deep brown.
+   Loaded after recipes.css so these tokens and overrides win. */
+html { background: #f8d98e; }
+html[data-theme="dark"] { background: #240d10; }
+
+.rb-page {
+  --bg: #fbe3a6; --paper: #fff6df; --raise: #fbe0a0; --ink: #2b1411; --sub: #6b4a40;
+  --edge: rgba(43, 20, 17, 0.22); --rule: rgba(43, 20, 17, 0.35); --line: #2b1411;
+  --cta: #c8323b; --on-cta: #fff6df; --cta-hover: #a82730; --warn: #b3261e; --rec: #c8323b;
+  --star: #e8a317; --star-off: #ead5a6; --media-bg: #f6d58c; --ph-ink: #2b1411;
+  --slot-b: #ffe08a; --slot-l: #cfe3b5; --slot-d: #f9b8a3; --slot-s: #f7a3a6; --slot-ink: #2b1411; --slot-mix: 100%;
+  --glass: rgba(255, 246, 223, 0.88); --glass-edge: #2b1411;
+  --shadow: 0 0 0 transparent; --shadow-lg: 8px 8px 0 #2b1411; --scrim: rgba(43, 20, 17, 0.55);
+  --sun: #f6c453; --blush: #f4878a; --maroon: #7a1d24;
+  --font-head: "Bricolage Grotesque", "Manrope", system-ui, sans-serif;
+}
+html[data-theme="dark"] .rb-page {
+  --bg: #240d10; --paper: #3a1519; --raise: #4b1d22; --ink: #fff1cf; --sub: #e0bfa0;
+  --edge: rgba(255, 241, 207, 0.18); --rule: rgba(255, 241, 207, 0.3); --line: #f6c453;
+  --cta: #f6c453; --on-cta: #240d10; --cta-hover: #ffd67a; --warn: #ff9a8a; --rec: #ff7a73;
+  --star: #f6c453; --star-off: #5a2b2e; --media-bg: #2e1013; --ph-ink: #fff1cf;
+  --slot-b: #f6c453; --slot-l: #b9d18f; --slot-d: #f4a58a; --slot-s: #f4878a; --slot-ink: #240d10; --slot-mix: 30%;
+  --glass: rgba(58, 21, 25, 0.86); --glass-edge: rgba(246, 196, 83, 0.4);
+  --shadow-lg: 8px 8px 0 #f6c453; --scrim: rgba(20, 6, 8, 0.78);
+}
+html:not([data-theme="dark"]) .rb-page {
+  background: radial-gradient(circle at 100% 0%, rgba(244, 135, 138, 0.55), transparent 36%),
+    radial-gradient(circle at 0% 65%, rgba(244, 135, 138, 0.3), transparent 34%), var(--bg);
+  background-attachment: fixed;
+}
+html[data-theme="dark"] .rb-page {
+  background: radial-gradient(circle at 100% 0%, rgba(200, 50, 59, 0.35), transparent 40%),
+    radial-gradient(circle at 0% 70%, rgba(122, 29, 36, 0.5), transparent 38%), var(--bg);
+  background-attachment: fixed;
+}
+
+/* top bar + nav */
+.rb-topbar, .pf-topbar { border-bottom: 2px solid var(--line); }
+.rb-wordmark, .rb-logo { font-size: 1.75rem; }
+.rb-nav a { font-weight: 700; border-bottom-width: 3px; }
+.rb-nav a[aria-current="page"] { border-bottom-color: var(--cta); }
+.mp-tabbar { border-bottom: 0; }
+
+/* tabs + buttons: outlined, sticker style */
+.mp-tabs { border: 2px solid var(--line); box-shadow: 3px 3px 0 var(--line); }
+.mp-tabs button.on { background: var(--cta); color: var(--on-cta); }
+.rb-btn { border: 2px solid var(--line); font-weight: 700; }
+.rb-toolbar-search input { border: 2px solid var(--line); }
+.rb-card-cuisine { background: var(--cta); color: var(--on-cta); border: 2px solid var(--line); }
+
+/* recipe cards */
+.rb-card { border: 2px solid var(--line); border-radius: 28px; padding: 10px; box-shadow: 5px 5px 0 var(--line); transition: transform 0.15s, box-shadow 0.15s; }
+.rb-card:hover { transform: translate(-2px, -3px); border-color: var(--line); box-shadow: 8px 9px 0 var(--cta); }
+.rb-card-media { height: 170px; border-radius: 20px; border: 2px solid var(--line); }
+.rb-card-body h3 { font-size: 1.15rem; }
+.rb-card-placeholder { position: relative; overflow: hidden; background: var(--tone-soft, var(--media-bg)); }
+html[data-theme="dark"] .rb-card-placeholder { background: color-mix(in srgb, var(--tone-soft, #f6c453) 40%, #240d10); }
+.rb-card-placeholder::before { content: ""; position: absolute; width: 170px; height: 170px; border-radius: 50%; right: -60px; top: -70px; background: rgba(255, 246, 223, 0.5); }
+.rb-card-placeholder::after { content: ""; position: absolute; width: 120px; height: 120px; border-radius: 50%; left: -40px; bottom: -50px; border: 3px solid var(--ink); opacity: 0.18; }
+.rb-card-placeholder svg { position: relative; z-index: 1; width: 96px; height: 96px; color: var(--ink); }
+.sr-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.55rem 0.6rem 0; }
+.sr-chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.18rem 0.6rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--raise); font: 700 0.72rem var(--font-body); color: var(--ink); }
+.sr-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--cta); }
+.sr-chip[data-level="easy"] i { background: #3f8f4f; }
+.sr-chip[data-level="medium"] i { background: #e8a317; }
+.sr-chip[data-level="hard"] i { background: #c8323b; }
+
+/* recipes banner */
+.sr-banner { max-width: 1180px; margin: 1.1rem auto 0; padding: 0 2rem; box-sizing: border-box; }
+.sr-banner-in { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;
+  padding: 1.8rem 2.2rem; border: 2px solid #2b1411; border-radius: 32px; background: var(--sun); color: #2b1411; box-shadow: 6px 6px 0 #2b1411; }
+.sr-banner-in::after { content: ""; position: absolute; right: -50px; top: -70px; width: 220px; height: 220px; border-radius: 50%; background: var(--blush); opacity: 0.85; }
+.sr-banner-in > * { position: relative; z-index: 1; }
+.sr-banner h2 { margin: 0; font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1; color: #2b1411; }
+.sr-banner p { margin: 0.45rem 0 0; font-weight: 600; }
+.sr-banner-btn { padding: 0.8rem 1.4rem; border-radius: 999px; background: #2b1411; color: #fff6df !important; font-weight: 800; text-decoration: none; }
+.sr-banner-btn:hover { background: #7a1d24; }
+@media (max-width: 760px) { .sr-banner { padding: 0 1rem; } .sr-banner-in { padding: 1.3rem; } }

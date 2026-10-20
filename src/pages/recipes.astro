@@ -5,6 +5,7 @@ import { listFoods, listRecipes } from "../db/recipes";
 import { listSavedSlugs } from "../db/saved-recipes";
 import "../styles/recipes.css";
 import "../styles/forms.css";
+import "../styles/sunrise.css";
 
 const user = Astro.locals.user;
 const [foods, recipes, savedSlugs] = await Promise.all([

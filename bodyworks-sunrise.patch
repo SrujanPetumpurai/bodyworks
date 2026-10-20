@@ -1,0 +1,931 @@
+diff --git a/src/components/landing/LandingHero.tsx b/src/components/landing/LandingHero.tsx
+new file mode 100644
+index 0000000..d265996
+--- /dev/null
++++ b/src/components/landing/LandingHero.tsx
+@@ -0,0 +1,98 @@
++import { useState } from "react";
++
++type Mode = "move" | "fuel";
++
++const DATA = {
++  move: {
++    head: ["Plan every", "session."],
++    sub: "Put workouts on a weekly calendar, repeat what works and keep your streak alive.",
++    cta: "Open workouts",
++    href: "/workouts",
++    photo: "/workout.jpg",
++    label: "Today · Pull day",
++    list: [["Deadlift", "4 × 5"], ["Barbell row", "3 × 8"], ["Face pulls", "3 × 15"]],
++    week: [["Mon", "Push"], ["Tue", "Legs"], ["Wed", "Rest"], ["Thu", "Pull"], ["Fri", "Core"], ["Sat", "Run"], ["Sun", "Rest"]],
++    features: [
++      ["Weekly calendar", "Drop sessions onto the days you plan to train."],
++      ["Repeat in one tap", "Copy a workout forward instead of retyping it."],
++      ["Your own types", "Create workout types that fit how you train."],
++    ],
++  },
++  fuel: {
++    head: ["Plan every", "meal."],
++    sub: "Save recipes, lay out your week and cook without the nightly scramble.",
++    cta: "Explore recipes",
++    href: "/recipes",
++    photo: "/kitchen.jpg",
++    label: "Today · Thursday menu",
++    list: [["Breakfast", "Berry oats"], ["Lunch", "Chickpea bowl"], ["Dinner", "Dal tadka"]],
++    week: [["Mon", "Oats"], ["Tue", "Bowl"], ["Wed", "Salmon"], ["Thu", "Dal"], ["Fri", "Stir-fry"], ["Sat", "Wraps"], ["Sun", "Prep"]],
++    features: [
++      ["Meal planner", "Arrange breakfast, lunch, dinner and snacks for the week."],
++      ["Import from YouTube", "Turn a cooking video into a saved recipe."],
++      ["Cook log & communities", "Note how it turned out and share with your group."],
++    ],
++  },
++} as const;
++
++export default function LandingHero() {
++  const [mode, setMode] = useState<Mode>("move");
++  const d = DATA[mode];
++
++  return (
++    <>
++      <section className="lp-hero" data-mode={mode} aria-labelledby="lp-title">
++        <div className="lp-copy">
++          <p className="lp-eyebrow">Your routine starts here</p>
++          <h1 id="lp-title">{d.head[0]}<br /><em>{d.head[1]}</em></h1>
++          <p className="lp-sub">{d.sub}</p>
++
++          <div className="lp-switch" role="group" aria-label="Choose a space">
++            <button type="button" aria-pressed={mode === "move"} onClick={() => setMode("move")}>Workouts</button>
++            <button type="button" aria-pressed={mode === "fuel"} onClick={() => setMode("fuel")}>Recipes</button>
++          </div>
++
++          <div className="lp-cta-row">
++            <a className="lp-cta" href={d.href}>{d.cta} →</a>
++            <a className="lp-ghost" href={mode === "move" ? "/recipes" : "/workouts"}>
++              or switch to {mode === "move" ? "recipes" : "workouts"}
++            </a>
++          </div>
++        </div>
++
++        <div className="lp-art" aria-hidden="true">
++          <div className="lp-blob" />
++          <div className="lp-photo" style={{ backgroundImage: `url(${d.photo})` }} />
++          <div className="lp-sticker">
++            <b>{d.label}</b>
++            {d.list.map(([a, b]) => (
++              <div key={a}><span>{a}</span><span>{b}</span></div>
++            ))}
++          </div>
++        </div>
++      </section>
++
++      <section className="lp-week" aria-label="Example week">
++        <h2>Your week, planned</h2>
++        <div className="lp-week-grid">
++          {d.week.map(([day, what], i) => (
++            <div key={day} className={`lp-day ${i === 3 ? "on" : ""}`}>
++              <small>{day}</small>
++              <strong>{what}</strong>
++            </div>
++          ))}
++        </div>
++      </section>
++
++      <section className="lp-features" aria-label="What you can do">
++        {d.features.map(([t, p], i) => (
++          <article key={t} className="lp-feature" data-n={i + 1}>
++            <span>{String(i + 1).padStart(2, "0")}</span>
++            <h3>{t}</h3>
++            <p>{p}</p>
++          </article>
++        ))}
++      </section>
++    </>
++  );
++}
+diff --git a/src/components/recipes/RecipeCard.tsx b/src/components/recipes/RecipeCard.tsx
+index 5b1550e..d064fa2 100644
+--- a/src/components/recipes/RecipeCard.tsx
++++ b/src/components/recipes/RecipeCard.tsx
+@@ -1,9 +1,10 @@
+ import { useEffect, useRef, useState } from "react";
++import { Clock } from "lucide-react";
+ import Avatar, { TONES, hash } from "./Avatar";
+ import type { RecipeSummary } from "./RecipesBrowser";
+ 
+ // soft tints for the light theme; the darker TONES are used in dark mode
+-const PASTELS = ["#ffefc2", "#eadff9", "#ffdccf", "#d6ecfa", "#d9f1de", "#fcdde8"];
++const PASTELS = ["#f6c453", "#f4878a", "#f9b8a3", "#ee6a4f", "#fbe3a6", "#cfe3b5"];
+ 
+ export type CardAction = { label: string; href?: string; onClick?: () => void; danger?: boolean };
+ 
+@@ -108,7 +109,10 @@ export default function RecipeCard({
+             style={{ "--tone": TONES[hash(recipe.name) % TONES.length], "--tone-soft": PASTELS[hash(recipe.name) % PASTELS.length] } as React.CSSProperties}
+             aria-hidden="true"
+           >
+-            {recipe.name.charAt(0)}
++            <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
++              <path d="M14 46h68c0 18-14 30-34 30S14 64 14 46Z" fill="rgba(255,246,223,.6)" />
++              <path d="M34 22c-4 5 4 8 0 13M48 18c-4 5 4 9 0 14M62 22c-4 5 4 8 0 13" />
++            </svg>
+           </div>
+         )}
+ 
+@@ -139,6 +143,17 @@ export default function RecipeCard({
+         <p>{recipe.description}</p>
+       </div>
+ 
++      {(recipe.prepTimeMinutes || recipe.difficulty) && (
++        <div className="sr-meta">
++          {recipe.prepTimeMinutes ? (
++            <span className="sr-chip"><Clock size={12} aria-hidden="true" />{recipe.prepTimeMinutes} min</span>
++          ) : null}
++          {recipe.difficulty && (
++            <span className="sr-chip" data-level={recipe.difficulty}><i aria-hidden="true" />{recipe.difficulty}</span>
++          )}
++        </div>
++      )}
++
+       <div className="rb-card-bar">
+         <div
+           className="rb-stars"
+diff --git a/src/components/recipes/RecipesBrowser.tsx b/src/components/recipes/RecipesBrowser.tsx
+index aa58d04..5154526 100644
+--- a/src/components/recipes/RecipesBrowser.tsx
++++ b/src/components/recipes/RecipesBrowser.tsx
+@@ -269,6 +269,18 @@ export default function RecipesBrowser({
+         </div>
+       </div>
+ 
++      {!planInView && (
++        <section className="sr-banner" aria-label="Recipes overview">
++          <div className="sr-banner-in">
++            <div>
++              <h2>{view === "discover" ? "What’s cooking today?" : "Your recipe book"}</h2>
++              <p>{filtered.length} {filtered.length === 1 ? "recipe" : "recipes"} ready to cook{anyActive ? " with your filters" : ""}.</p>
++            </div>
++            <a className="sr-banner-btn" href={signedIn ? "/recipes/new" : "/auth"}>{signedIn ? "Add a recipe" : "Sign in to add yours"}</a>
++          </div>
++        </section>
++      )}
++
+       <div className="rb-container">
+         {saveError && <p className="rb-msg" role="alert">{saveError}</p>}
+         {filtered.length === 0 ? (
+diff --git a/src/layouts/Page.astro b/src/layouts/Page.astro
+index 9a6c8d1..27b5c85 100644
+--- a/src/layouts/Page.astro
++++ b/src/layouts/Page.astro
+@@ -4,6 +4,7 @@ import "../styles/recipes.css";
+ import "../styles/forms.css";
+ import "../styles/profile.css";
+ import "../styles/communities.css";
++import "../styles/sunrise.css";
+ 
+ const { title, nav = true } = Astro.props;
+ ---
+diff --git a/src/pages/index.astro b/src/pages/index.astro
+index 0c28c57..95af704 100644
+--- a/src/pages/index.astro
++++ b/src/pages/index.astro
+@@ -1,115 +1,34 @@
+ ---
+ export const prerender = false;
+ import AccountMenu from "../components/AccountMenu";
++import LandingHero from "../components/landing/LandingHero";
+ import "../styles/recipes.css";
+ import "../styles/forms.css";
+ import "../styles/landing.css";
++import "../styles/sunrise.css";
+ ---
+ 
+-<!doctype html>
+-<html lang="en" data-theme="dark">
++<html lang="en">
+   <head>
+     <meta charset="utf-8" />
++    <script is:inline>try{var t=localStorage.getItem("bw-theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="light"}</script>
+     <meta name="viewport" content="width=device-width, initial-scale=1" />
+-    <title>Bodyworks — same goal, two ways</title>
++    <title>Bodyworks — plan your workouts and your meals</title>
+     <meta name="description" content="Plan your workouts, save recipes, and build a healthier routine with Bodyworks." />
+-    <meta name="theme-color" content="#100e0b" />
+-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+-    <link
+-      href="https://fonts.googleapis.com/css2?family=Anton&family=Manrope:wght@400;500;600;700;800&display=swap"
+-      rel="stylesheet"
+-    />
+   </head>
+   <body>
+     <div class="rb-page lp">
+-      <div class="lp-atmosphere" aria-hidden="true">
+-        <div class="lp-atmosphere__photo lp-atmosphere__photo--gym"></div>
+-        <div class="lp-atmosphere__photo lp-atmosphere__photo--kitchen"></div>
+-        <div class="lp-atmosphere__shade"></div>
+-        <div class="lp-grain"></div>
+-      </div>
+-
+       <header class="lp-top">
+-        <a href="/" class="lp-wordmark" aria-label="Bodyworks home">BODYWORKS<span>.</span></a>
+-        <div class="lp-top-right">
+-          <span class="lp-top-note">Train with intent. Eat with joy.</span>
+-          <AccountMenu showThemeToggle={false} client:load />
+-        </div>
++        <a href="/" class="lp-wordmark" aria-label="Bodyworks home">bodyworks<span>.</span></a>
++        <nav class="lp-nav" aria-label="Main">
++          <a href="/workouts">Workouts</a>
++          <a href="/recipes">Recipes</a>
++        </nav>
++        <AccountMenu client:load />
+       </header>
+-
+       <main class="lp-main">
+-        <section class="lp-heading" aria-labelledby="lp-title">
+-          <p class="lp-eyebrow"><span></span> YOUR ROUTINE STARTS HERE <span></span></p>
+-          <h1 id="lp-title">SAME GOAL.<br /><em>TWO WAYS.</em></h1>
+-          <p class="lp-subtitle">Train harder. Eat better. Build a healthier you.</p>
+-        </section>
+-
+-        <section class="lp-choices" aria-label="Choose your Bodyworks space">
+-          <a class="lp-choice lp-choice--workouts" href="/workouts" aria-label="Enter Workouts">
+-            <div class="lp-choice-photo" aria-hidden="true"></div>
+-            <div class="lp-choice-tint" aria-hidden="true"></div>
+-            <div class="lp-card-grid" aria-hidden="true"></div>
+-            <div class="lp-card-particles lp-card-particles--gym" aria-hidden="true"></div>
+-
+-            <div class="lp-choice-meta">
+-              <span>01 <i>/</i> MOVE</span>
+-              <span class="lp-choice-orbit" aria-hidden="true">↗</span>
+-            </div>
+-
+-            <div class="lp-choice-body">
+-              <span class="lp-choice-icon lp-choice-icon--gym" aria-hidden="true">
+-                <svg viewBox="0 0 48 48" fill="none"><path d="M8 17v14M14 12v24M34 12v24M40 17v14M14 24h20M4 20v8M44 20v8" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+-              </span>
+-              <p class="lp-choice-kicker">BUILD YOUR ROUTINE</p>
+-              <h2>WORK<br />OUTS<span>.</span></h2>
+-              <p class="lp-choice-description">Plan your sessions. Build consistency. Track every rep.</p>
+-              <ul class="lp-mini-list" aria-label="Workout features">
+-                <li>Plan</li><li>Execute</li><li>Track</li><li>Repeat</li>
+-              </ul>
+-              <span class="lp-choice-action">ENTER WORKOUTS <b aria-hidden="true">⟶</b></span>
+-            </div>
+-
+-            <span class="lp-card-stamp" aria-hidden="true">BODYWORKS <b>01</b></span>
+-            <span class="lp-card-corner lp-card-corner--one" aria-hidden="true"></span>
+-            <span class="lp-card-corner lp-card-corner--two" aria-hidden="true"></span>
+-          </a>
+-
+-          <a class="lp-choice lp-choice--recipes" href="/recipes" aria-label="Explore Recipes">
+-            <div class="lp-choice-photo" aria-hidden="true"></div>
+-            <div class="lp-choice-tint" aria-hidden="true"></div>
+-            <div class="lp-card-grid" aria-hidden="true"></div>
+-            <div class="lp-card-particles lp-card-particles--food" aria-hidden="true"></div>
+-
+-            <div class="lp-choice-meta">
+-              <span>02 <i>/</i> FUEL</span>
+-              <span class="lp-choice-orbit" aria-hidden="true">↗</span>
+-            </div>
+-
+-            <div class="lp-choice-body">
+-              <span class="lp-choice-icon lp-choice-icon--food" aria-hidden="true">
+-                <svg viewBox="0 0 48 48" fill="none"><path d="M24 7v5M13 11l3 4M35 11l-3 4M10 24a14 14 0 0 1 28 0c0 8-6 14-14 14S10 32 10 24Z" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M16 26c3-4 5 4 8 0s5 4 8 0" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+-              </span>
+-              <p class="lp-choice-kicker">MAKE GOOD FOOD HAPPEN</p>
+-              <h2>RECI<br />PES<span>.</span></h2>
+-              <p class="lp-choice-description">Save what you love. Plan your meals. Keep your kitchen notes.</p>
+-              <ul class="lp-mini-list" aria-label="Recipe features">
+-                <li>Discover</li><li>Save</li><li>Plan</li><li>Cook</li>
+-              </ul>
+-              <span class="lp-choice-action">EXPLORE RECIPES <b aria-hidden="true">⟶</b></span>
+-            </div>
+-
+-            <span class="lp-card-stamp" aria-hidden="true">BODYWORKS <b>02</b></span>
+-            <span class="lp-card-corner lp-card-corner--one" aria-hidden="true"></span>
+-            <span class="lp-card-corner lp-card-corner--two" aria-hidden="true"></span>
+-          </a>
+-        </section>
+-
+-        <footer class="lp-footer">
+-          <span>MOVE WITH PURPOSE.</span>
+-          <span class="lp-footer-mark"><i></i> TWO SIDES OF A BETTER ROUTINE <i></i></span>
+-          <span>FUEL YOUR EVERYDAY.</span>
+-        </footer>
++        <LandingHero client:load />
++        <footer class="lp-footer">Move with purpose. Fuel your everyday.</footer>
+       </main>
+     </div>
+   </body>
+diff --git a/src/pages/recipes.astro b/src/pages/recipes.astro
+index 14b387c..15019b3 100644
+--- a/src/pages/recipes.astro
++++ b/src/pages/recipes.astro
+@@ -5,6 +5,7 @@ import { listFoods, listRecipes } from "../db/recipes";
+ import { listSavedSlugs } from "../db/saved-recipes";
+ import "../styles/recipes.css";
+ import "../styles/forms.css";
++import "../styles/sunrise.css";
+ 
+ const user = Astro.locals.user;
+ const [foods, recipes, savedSlugs] = await Promise.all([
+diff --git a/src/pages/workouts.astro b/src/pages/workouts.astro
+index 2d5eabb..09279f5 100644
+--- a/src/pages/workouts.astro
++++ b/src/pages/workouts.astro
+@@ -4,6 +4,7 @@ import WorkoutCalendar from "../components/workouts/WorkoutCalendar";
+ import "../styles/recipes.css";
+ import "../styles/forms.css";
+ import "../styles/workouts.css";
++import "../styles/sunrise.css";
+ 
+ const signedIn = !!Astro.locals.user;
+ ---
+diff --git a/src/styles/landing.css b/src/styles/landing.css
+index fbf1fb8..8a3aabd 100644
+--- a/src/styles/landing.css
++++ b/src/styles/landing.css
+@@ -1,441 +1,57 @@
+-/* Bodyworks landing page: cinematic split cards, animated with CSS only. */
+-
+-html:has(.lp) {
+-  background: #100e0b;
+-  color-scheme: dark;
+-}
+-
+-.rb-page.lp {
+-  --bg: #100e0b;
+-  --paper: #1d1913;
+-  --raise: #292117;
+-  --ink: #f7f0e2;
+-  --sub: #b9ad98;
+-  --edge: rgba(247, 240, 226, 0.16);
+-  --rule: rgba(247, 240, 226, 0.25);
+-  --gold: #edb843;
+-  --cta: #edb843;
+-  --on-cta: #100e0b;
+-  --cta-hover: #ffce67;
+-  --display: "Anton", Impact, sans-serif;
+-  position: relative;
+-  isolation: isolate;
+-  min-height: 100svh;
+-  overflow: hidden;
+-  color: var(--ink);
+-  background:
+-    radial-gradient(ellipse at 50% 30%, rgba(237, 184, 67, 0.09), transparent 42%),
+-    #100e0b;
+-}
+-
+-.lp-atmosphere {
+-  position: absolute;
+-  z-index: -2;
+-  inset: 0;
+-  display: grid;
+-  grid-template-columns: 1fr 1fr;
+-  overflow: hidden;
+-  pointer-events: none;
+-}
+-.lp-atmosphere__photo {
+-  background-size: cover;
+-  background-position: center;
+-  filter: saturate(.58) brightness(.28) sepia(.22);
+-  transform: scale(1.02);
+-}
+-.lp-atmosphere__photo--gym { background-image: url("/workout.jpg"); }
+-.lp-atmosphere__photo--kitchen { background-image: url("/kitchen.jpg"); }
+-.lp-atmosphere__shade {
+-  position: absolute;
+-  inset: 0;
+-  background:
+-    linear-gradient(180deg, rgba(16,14,11,.52), rgba(16,14,11,.72) 34%, #100e0b 100%),
+-    linear-gradient(90deg, rgba(16,14,11,.22), rgba(16,14,11,.85) 50%, rgba(16,14,11,.22));
+-}
+-.lp-grain {
+-  position: absolute;
+-  inset: -50%;
+-  opacity: .08;
+-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+-  animation: lp-grain-drift 500ms steps(3) infinite;
+-}
+-
+-.lp-top, .lp-main { position: relative; z-index: 1; }
+-.lp-top {
+-  min-height: 66px;
+-  max-width: 1500px;
+-  margin: 0 auto;
+-  padding: .85rem clamp(1.1rem, 4vw, 3.8rem);
+-  box-sizing: border-box;
+-  display: flex;
+-  align-items: center;
+-  justify-content: space-between;
+-  gap: 1rem;
+-  border-bottom: 1px solid rgba(247,240,226,.1);
+-}
+-.rb-page .lp-wordmark {
+-  color: var(--ink);
+-  text-decoration: none;
+-  font: 400 1.45rem/1 var(--display);
+-  letter-spacing: .055em;
+-}
+-.rb-page .lp-wordmark span { color: var(--gold); }
+-.lp-top-right { display:flex; align-items:center; gap: clamp(.8rem, 2.6vw, 2rem); }
+-.lp-top-note {
+-  color: rgba(247,240,226,.56);
+-  font-size: .64rem;
+-  font-weight: 700;
+-  letter-spacing: .16em;
+-  text-transform: uppercase;
+-}
+-
+-.lp-main {
+-  width: min(100%, 1500px);
+-  min-height: calc(100svh - 66px);
+-  margin: 0 auto;
+-  padding: clamp(1.1rem, 2.3vh, 2rem) clamp(1.1rem, 4vw, 3.8rem) .7rem;
+-  box-sizing: border-box;
+-  display: flex;
+-  flex-direction: column;
+-}
+-.lp-heading { text-align: center; flex: 0 0 auto; margin: 0 0 clamp(.8rem, 1.8vh, 1.35rem); }
+-.lp-eyebrow {
+-  margin: 0 0 .5rem;
+-  display: inline-flex;
+-  align-items: center;
+-  justify-content: center;
+-  gap: .65rem;
+-  color: var(--gold);
+-  font-size: .59rem;
+-  font-weight: 800;
+-  letter-spacing: .25em;
+-}
+-.lp-eyebrow span { width: 24px; height: 1px; background: var(--gold); opacity: .8; }
+-.rb-page .lp-heading h1 {
+-  margin: 0;
+-  color: var(--ink);
+-  font: 400 clamp(2.65rem, 5.3vw, 5.15rem)/.88 var(--display);
+-  letter-spacing: -.015em;
+-  text-shadow: 0 4px 32px rgba(0,0,0,.35);
+-}
+-.rb-page .lp-heading h1 em { color: var(--gold); font-style: normal; }
+-.lp-subtitle {
+-  margin: .65rem 0 0;
+-  color: rgba(247,240,226,.66);
+-  font-size: clamp(.62rem, .95vw, .76rem);
+-  font-weight: 600;
+-  letter-spacing: .2em;
+-  text-transform: uppercase;
+-}
+-
+-.lp-choices {
+-  flex: 1 1 auto;
+-  min-height: 0;
+-  display: grid;
+-  grid-template-columns: repeat(2, minmax(0, 1fr));
+-  gap: clamp(.75rem, 1.5vw, 1.25rem);
+-}
+-.lp-choice {
+-  --card-accent: #edb843;
+-  position: relative;
+-  isolation: isolate;
+-  min-width: 0;
+-  min-height: 0;
+-  overflow: hidden;
+-  display: flex;
+-  flex-direction: column;
+-  justify-content: space-between;
+-  padding: clamp(1rem, 2vw, 1.65rem);
+-  box-sizing: border-box;
+-  color: var(--ink) !important;
+-  text-decoration: none;
+-  border: 1px solid rgba(237,184,67,.48);
+-  border-radius: 7px;
+-  background: #1c1710;
+-  box-shadow: inset 0 0 0 1px rgba(237,184,67,.04), 0 16px 60px rgba(0,0,0,.2);
+-  transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease;
+-  animation: lp-card-arrive 750ms cubic-bezier(.2,.8,.2,1) both;
+-}
+-.lp-choice--recipes { animation-delay: 110ms; }
+-.lp-choice:hover, .lp-choice:focus-visible {
+-  transform: translateY(-4px);
+-  border-color: var(--gold);
+-  box-shadow: inset 0 0 0 1px rgba(237,184,67,.34), 0 0 30px rgba(237,184,67,.1), 0 22px 65px rgba(0,0,0,.38);
+-}
+-.lp-choice:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+-.lp-choice-photo {
+-  position: absolute;
+-  z-index: -4;
+-  inset: 0;
+-  background-size: cover;
+-  background-position: center;
+-  transition: transform 850ms cubic-bezier(.2,.7,.2,1), filter 500ms ease;
+-  filter: saturate(.8) brightness(.72);
+-}
+-.lp-choice--workouts .lp-choice-photo {
+-  background-image: url("/workout.jpg");
+-  background-position: 52% center;
+-}
+-.lp-choice--recipes .lp-choice-photo {
+-  background-image: url("/kitchen.jpg");
+-  background-position: 52% center;
+-}
+-.lp-choice:hover .lp-choice-photo, .lp-choice:focus-visible .lp-choice-photo {
+-  transform: scale(1.075);
+-  filter: saturate(1.03) brightness(.82);
+-}
+-.lp-choice-tint {
+-  position: absolute;
+-  z-index: -3;
+-  inset: 0;
+-  background:
+-    linear-gradient(180deg, rgba(12,11,9,.38) 0%, rgba(12,11,9,.08) 24%, rgba(12,11,9,.44) 47%, rgba(12,11,9,.93) 100%),
+-    linear-gradient(90deg, rgba(12,11,9,.2), transparent 60%);
+-}
+-.lp-choice--recipes .lp-choice-tint {
+-  background:
+-    linear-gradient(180deg, rgba(23,13,5,.25) 0%, rgba(23,13,5,.02) 24%, rgba(23,13,5,.43) 48%, rgba(23,13,5,.94) 100%),
+-    linear-gradient(90deg, rgba(23,13,5,.15), transparent 60%);
+-}
+-.lp-card-grid {
+-  position: absolute;
+-  z-index: -2;
+-  inset: 0;
+-  opacity: .14;
+-  background-image: linear-gradient(rgba(237,184,67,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(237,184,67,.18) 1px, transparent 1px);
+-  background-size: 42px 42px;
+-  mask-image: linear-gradient(180deg, black, transparent 62%);
+-  pointer-events: none;
+-}
+-.lp-choice-meta { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+-.lp-choice-meta > span:first-child {
+-  color: rgba(255,248,232,.86);
+-  font-size: .63rem;
+-  font-weight: 800;
+-  letter-spacing: .18em;
+-}
+-.lp-choice-meta i { color: var(--gold); font-style:normal; margin: 0 .25rem; }
+-.lp-choice-orbit {
+-  width: 36px;
+-  height: 36px;
+-  display:grid;
+-  place-items:center;
+-  border: 1px solid rgba(255,248,232,.65);
+-  border-radius: 50%;
+-  font-size: 1.1rem;
+-  transition: transform 250ms ease, color 250ms ease, background 250ms ease, border-color 250ms ease;
+-}
+-.lp-choice:hover .lp-choice-orbit, .lp-choice:focus-visible .lp-choice-orbit {
+-  transform: rotate(45deg);
+-  color: #100e0b;
+-  background: var(--gold);
+-  border-color: var(--gold);
+-}
+-.lp-choice-body {
+-  position: relative;
+-  width: 100%;
+-  max-width: 460px;
+-  margin: auto auto 0;
+-  padding-top: clamp(.4rem, 1.6vh, 1.25rem);
+-}
+-.lp-choice-icon {
+-  display:grid;
+-  place-items:center;
+-  width: 44px;
+-  height: 44px;
+-  margin-bottom: .55rem;
+-  color: var(--gold);
+-  border: 1px solid rgba(237,184,67,.5);
+-  border-radius: 50%;
+-  background: rgba(15,13,10,.52);
+-  box-shadow: 0 0 24px rgba(237,184,67,.08);
+-}
+-.lp-choice-icon svg { width: 27px; height: 27px; }
+-.lp-choice-kicker {
+-  margin: 0 0 .45rem;
+-  color: var(--gold);
+-  font-size: .62rem;
+-  font-weight: 800;
+-  letter-spacing: .2em;
+-}
+-.rb-page .lp-choice h2 {
+-  margin: 0;
+-  color: var(--ink);
+-  font: 400 clamp(3rem, 5.5vw, 5.7rem)/.82 var(--display);
+-  letter-spacing: -.01em;
+-  text-transform: uppercase;
+-  text-shadow: 0 4px 24px rgba(0,0,0,.35);
+-}
+-.rb-page .lp-choice h2 span { color: var(--gold); }
+-.lp-choice-description {
+-  max-width: 360px;
+-  margin: .8rem 0 .75rem;
+-  color: rgba(255,248,232,.88);
+-  font-size: clamp(.76rem, 1.05vw, .9rem);
+-  line-height: 1.55;
+-}
+-.lp-mini-list {
+-  display:flex;
+-  flex-wrap:wrap;
+-  gap:.38rem;
+-  list-style:none;
+-  padding:0;
+-  margin: 0 0 .9rem;
+-}
+-.lp-mini-list li {
+-  border: 1px solid rgba(255,248,232,.28);
+-  border-radius: 2px;
+-  padding: .25rem .45rem;
+-  color: rgba(255,248,232,.76);
+-  background: rgba(10,9,7,.25);
+-  font-size: .56rem;
+-  font-weight: 700;
+-  letter-spacing: .12em;
+-  text-transform: uppercase;
+-}
+-.lp-choice-action {
+-  display:inline-flex;
+-  align-items:center;
+-  gap:.8rem;
+-  padding: .55rem 0 .42rem;
+-  border-bottom: 1px solid var(--gold);
+-  color: var(--ink);
+-  font-size: .64rem;
+-  font-weight: 800;
+-  letter-spacing: .16em;
+-}
+-.lp-choice-action b {
+-  color: var(--gold);
+-  font-size: 1.25rem;
+-  font-weight: 400;
+-  transition: transform 220ms ease;
+-}
+-.lp-choice:hover .lp-choice-action b, .lp-choice:focus-visible .lp-choice-action b { transform: translateX(5px); }
+-.lp-card-stamp {
+-  position:absolute;
+-  right: clamp(1rem, 2vw, 1.65rem);
+-  bottom: clamp(1rem, 2vw, 1.65rem);
+-  color: rgba(255,248,232,.46);
+-  font: 400 .58rem var(--display);
+-  letter-spacing:.12em;
+-  writing-mode: vertical-rl;
+-}
+-.lp-card-stamp b { color: var(--gold); font-weight:400; margin-top:.35rem; }
+-.lp-card-corner {
+-  position:absolute;
+-  width:22px;
+-  height:22px;
+-  border-color:var(--gold);
+-  opacity:.8;
+-  transition:width 250ms ease,height 250ms ease,opacity 250ms ease;
+-}
+-.lp-card-corner--one { top:8px; left:8px; border-top:1px solid; border-left:1px solid; }
+-.lp-card-corner--two { bottom:8px; left:8px; border-bottom:1px solid; border-left:1px solid; }
+-.lp-choice:hover .lp-card-corner, .lp-choice:focus-visible .lp-card-corner { width:34px; height:34px; opacity:1; }
+-
+-/* Decorative sparks are CSS radial gradients, not a JavaScript particle loop. */
+-.lp-card-particles {
+-  position:absolute;
+-  z-index:-1;
+-  inset:0;
+-  pointer-events:none;
+-  opacity:.3;
+-  background-repeat:repeat;
+-  background-size: 173px 197px;
+-  transition:opacity 350ms ease;
+-}
+-.lp-card-particles--gym {
+-  background-image:
+-    radial-gradient(circle, rgba(255,191,66,.95) 0 1px, transparent 1.8px),
+-    radial-gradient(circle, rgba(255,143,34,.7) 0 1px, transparent 2px),
+-    radial-gradient(circle, rgba(255,225,153,.8) 0 1px, transparent 1.8px);
+-  background-position: 0 0, 37px 61px, 91px 123px;
+-  animation: lp-sparks 13s linear infinite;
+-}
+-.lp-card-particles--food {
+-  background-image:
+-    radial-gradient(circle, rgba(255,204,99,.9) 0 1px, transparent 1.8px),
+-    radial-gradient(circle, rgba(255,245,203,.7) 0 1px, transparent 2px);
+-  background-position: 13px 21px, 79px 113px;
+-  animation: lp-sparks 17s linear infinite reverse;
+-}
+-.lp-choice:hover .lp-card-particles, .lp-choice:focus-visible .lp-card-particles { opacity:.72; }
+-
+-.lp-footer {
+-  flex:0 0 auto;
+-  min-height: 32px;
+-  display:flex;
+-  align-items:center;
+-  justify-content:space-between;
+-  gap:1rem;
+-  padding-top: .6rem;
+-  color:rgba(247,240,226,.43);
+-  font-size:.54rem;
+-  font-weight:800;
+-  letter-spacing:.15em;
+-}
+-.lp-footer-mark { display:inline-flex; align-items:center; justify-content:center; gap:.6rem; text-align:center; }
+-.lp-footer-mark i { width:18px; height:1px; background:var(--gold); opacity:.75; }
+-
+-@keyframes lp-card-arrive {
+-  from { opacity:0; transform:translateY(16px); }
+-  to { opacity:1; transform:translateY(0); }
+-}
+-@keyframes lp-sparks {
+-  from { background-position: 0 0, 37px 61px, 91px 123px; }
+-  to { background-position: 0 -197px, 37px -136px, 91px -74px; }
+-}
+-@keyframes lp-grain-drift {
+-  0% { transform:translate(0,0); }
+-  33% { transform:translate(-2%,1%); }
+-  66% { transform:translate(1%,-2%); }
+-  100% { transform:translate(2%,1%); }
+-}
+-
+-@media (min-width: 1500px) {
+-  .lp-choice { padding: 1.8rem; }
+-}
+-@media (max-height: 760px) and (min-width: 761px) {
+-  .lp-main { padding-top: .8rem; }
+-  .lp-heading { margin-bottom: .7rem; }
+-  .rb-page .lp-heading h1 { font-size: clamp(2.4rem, 5vh, 3.8rem); }
+-  .lp-subtitle { margin-top: .4rem; }
+-  .lp-choice { padding: 1rem; }
+-  .lp-choice-icon { width: 36px; height: 36px; margin-bottom: .4rem; }
+-  .lp-choice-icon svg { width: 23px; height: 23px; }
+-  .rb-page .lp-choice h2 { font-size: clamp(2.8rem, 5.2vh, 4.3rem); }
+-  .lp-choice-description { margin: .55rem 0; }
+-  .lp-mini-list { margin-bottom: .55rem; }
+-  .lp-footer { min-height: 25px; }
+-}
+-@media (max-width: 760px) {
+-  .lp-top { min-height: 60px; padding: .8rem 1rem; }
+-  .rb-page .lp-wordmark { font-size:1.25rem; }
+-  .lp-top-note { display:none; }
+-  .lp-main { min-height:calc(100svh - 60px); padding: 1.4rem 1rem .8rem; }
+-  .lp-heading { margin-bottom:1.1rem; }
+-  .lp-eyebrow { font-size:.53rem; letter-spacing:.16em; }
+-  .rb-page .lp-heading h1 { font-size:clamp(2.65rem, 10vw, 4.2rem); }
+-  .lp-subtitle { font-size:.58rem; letter-spacing:.1em; line-height:1.5; }
+-  .lp-choices { grid-template-columns:1fr; gap:.85rem; }
+-  .lp-choice { min-height:390px; padding:1.15rem; }
+-  .rb-page .lp-choice h2 { font-size:clamp(3.8rem, 14vw, 5.4rem); }
+-  .lp-choice-body { padding-top:1rem; }
+-  .lp-choice-description { max-width:300px; }
+-  .lp-footer { flex-wrap:wrap; justify-content:center; padding-top:1rem; text-align:center; }
+-  .lp-footer-mark { width:100%; order:-1; }
+-  .lp-footer > span:first-child, .lp-footer > span:last-child { font-size:.5rem; }
+-}
+-@media (max-width: 390px) {
+-  .lp-choice { min-height:360px; }
+-  .lp-card-stamp { display:none; }
+-  .lp-choice-description { font-size:.75rem; }
+-}
+-@media (prefers-reduced-motion: reduce) {
+-  *, *::before, *::after {
+-    animation-duration:.01ms !important;
+-    animation-iteration-count:1 !important;
+-    scroll-behavior:auto !important;
+-    transition-duration:.01ms !important;
+-  }
+-}
++/* Landing page layout. Colours and fonts come from the tokens in sunrise.css. */
++.rb-page.lp { min-height: 100svh; overflow-x: clip; }
++.lp-top { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; max-width: 1240px; margin: 0 auto; padding: 1rem 2rem; box-sizing: border-box; }
++.rb-page .lp-wordmark { font: 800 1.9rem/1 var(--font-head); letter-spacing: -0.03em; color: var(--ink); text-decoration: none; }
++.rb-page .lp-wordmark span { color: var(--cta); }
++.lp-nav { display: flex; gap: 0.3rem; flex: 1; }
++.rb-page .lp-nav a { padding: 0.5rem 0.9rem; font-weight: 700; color: var(--sub); text-decoration: none; }
++.rb-page .lp-nav a:hover { color: var(--ink); }
++
++.lp-main { max-width: 1240px; margin: 0 auto; padding: 0 2rem 2rem; box-sizing: border-box; }
++.lp-hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 2.5rem; align-items: center; padding: 1.5rem 0 3rem; }
++.lp-eyebrow { display: inline-block; margin: 0 0 1rem; padding: 0.35rem 0.9rem; border: 2px solid var(--line); border-radius: 999px; background: var(--paper); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
++.rb-page .lp-copy h1 { margin: 0; font-size: clamp(3.2rem, 7.4vw, 6.6rem); line-height: 0.92; letter-spacing: -0.035em; }
++.rb-page .lp-copy h1 em { font-style: normal; color: var(--cta); }
++.lp-sub { max-width: 30rem; margin: 1.2rem 0 1.6rem; font-size: 1.15rem; color: var(--sub); font-weight: 500; }
++
++.lp-switch { display: inline-flex; padding: 4px; border: 2px solid var(--line); border-radius: 999px; background: var(--paper); box-shadow: 4px 4px 0 var(--line); }
++.lp-switch button { min-height: 46px; padding: 0 1.6rem; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font: 800 1rem var(--font-body); cursor: pointer; transition: background 0.15s; }
++.lp-switch button[aria-pressed="true"] { background: var(--cta); color: var(--on-cta); }
++.lp-cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 1.2rem; margin-top: 1.6rem; }
++.rb-page a.lp-cta { padding: 1rem 1.7rem; border: 2px solid var(--line); border-radius: 16px; background: var(--sun); color: #2b1411; font-weight: 800; text-decoration: none; box-shadow: 4px 4px 0 var(--line); transition: transform 0.15s, box-shadow 0.15s; }
++.rb-page a.lp-cta:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--line); }
++.rb-page a.lp-ghost { color: var(--ink); font-weight: 700; }
++
++.lp-art { position: relative; aspect-ratio: 1; max-width: 520px; width: 100%; justify-self: center; }
++.lp-blob { position: absolute; inset: 4% -4% -4% 6%; border-radius: 50%; background: var(--blush); }
++.lp-photo { position: absolute; inset: 0 8% 8% 0; border: 3px solid var(--line); border-radius: 50%; background-size: cover; background-position: center; box-shadow: 8px 8px 0 var(--line); }
++.lp-sticker { position: absolute; right: 0; bottom: 2%; width: min(300px, 70%); padding: 1rem 1.1rem; border: 2px solid var(--line); border-radius: 22px; background: var(--paper); box-shadow: 5px 5px 0 var(--line); }
++.lp-sticker b { display: block; margin-bottom: 0.5rem; color: var(--cta); font-size: 0.9rem; }
++.lp-sticker div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; border-top: 1px dashed var(--rule); font-size: 0.9rem; font-weight: 600; }
++.lp-sticker div span:last-child { color: var(--sub); }
++
++.lp-week h2, .lp-features + .x { font-size: 1.6rem; margin: 0 0 1rem; }
++.lp-week-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.75rem; }
++.lp-day { display: flex; flex-direction: column; justify-content: space-between; min-height: 112px; padding: 0.9rem; border: 2px solid var(--line); border-radius: 20px; background: var(--paper); }
++.lp-day small { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sub); }
++.lp-day strong { font: 800 1.2rem/1.1 var(--font-head); }
++.lp-day.on { background: var(--cta); color: var(--on-cta); box-shadow: 4px 4px 0 var(--line); }
++.lp-day.on small { color: var(--on-cta); opacity: 0.85; }
++
++.lp-features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 2.5rem; }
++.lp-feature { padding: 1.5rem; border: 2px solid var(--line); border-radius: 28px; box-shadow: 5px 5px 0 var(--line); background: var(--paper); }
++.lp-feature[data-n="1"] { background: var(--sun); color: #2b1411; }
++.lp-feature[data-n="2"] { background: var(--blush); color: #2b1411; }
++.lp-feature span { font: 800 0.8rem var(--font-body); letter-spacing: 0.14em; }
++.lp-feature h3 { margin: 0.5rem 0 0.4rem; font-size: 1.4rem; }
++.lp-feature p { margin: 0; font-weight: 500; }
++.lp-feature[data-n="3"] p { color: var(--sub); }
++.lp-footer { margin-top: 2.5rem; text-align: center; font-weight: 700; color: var(--sub); }
++
++@media (max-width: 860px) {
++  .lp-hero { grid-template-columns: 1fr; }
++  .lp-week-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
++  .lp-features { grid-template-columns: 1fr; }
++  .lp-top, .lp-main { padding-left: 1rem; padding-right: 1rem; }
++}
++@media (prefers-reduced-motion: reduce) { * { transition-duration: 0.01ms !important; } }
+diff --git a/src/styles/sunrise.css b/src/styles/sunrise.css
+new file mode 100644
+index 0000000..5f9f572
+--- /dev/null
++++ b/src/styles/sunrise.css
+@@ -0,0 +1,80 @@
++@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap");
++
++/* "Sunrise" theme: butter yellow, tomato coral, blush pink and deep brown.
++   Loaded after recipes.css so these tokens and overrides win. */
++html { background: #f8d98e; }
++html[data-theme="dark"] { background: #240d10; }
++
++.rb-page {
++  --bg: #fbe3a6; --paper: #fff6df; --raise: #fbe0a0; --ink: #2b1411; --sub: #6b4a40;
++  --edge: rgba(43, 20, 17, 0.22); --rule: rgba(43, 20, 17, 0.35); --line: #2b1411;
++  --cta: #c8323b; --on-cta: #fff6df; --cta-hover: #a82730; --warn: #b3261e; --rec: #c8323b;
++  --star: #e8a317; --star-off: #ead5a6; --media-bg: #f6d58c; --ph-ink: #2b1411;
++  --slot-b: #ffe08a; --slot-l: #cfe3b5; --slot-d: #f9b8a3; --slot-s: #f7a3a6; --slot-ink: #2b1411; --slot-mix: 100%;
++  --glass: rgba(255, 246, 223, 0.88); --glass-edge: #2b1411;
++  --shadow: 0 0 0 transparent; --shadow-lg: 8px 8px 0 #2b1411; --scrim: rgba(43, 20, 17, 0.55);
++  --sun: #f6c453; --blush: #f4878a; --maroon: #7a1d24;
++  --font-head: "Bricolage Grotesque", "Manrope", system-ui, sans-serif;
++}
++html[data-theme="dark"] .rb-page {
++  --bg: #240d10; --paper: #3a1519; --raise: #4b1d22; --ink: #fff1cf; --sub: #e0bfa0;
++  --edge: rgba(255, 241, 207, 0.18); --rule: rgba(255, 241, 207, 0.3); --line: #f6c453;
++  --cta: #f6c453; --on-cta: #240d10; --cta-hover: #ffd67a; --warn: #ff9a8a; --rec: #ff7a73;
++  --star: #f6c453; --star-off: #5a2b2e; --media-bg: #2e1013; --ph-ink: #fff1cf;
++  --slot-b: #f6c453; --slot-l: #b9d18f; --slot-d: #f4a58a; --slot-s: #f4878a; --slot-ink: #240d10; --slot-mix: 30%;
++  --glass: rgba(58, 21, 25, 0.86); --glass-edge: rgba(246, 196, 83, 0.4);
++  --shadow-lg: 8px 8px 0 #f6c453; --scrim: rgba(20, 6, 8, 0.78);
++}
++html:not([data-theme="dark"]) .rb-page {
++  background: radial-gradient(circle at 100% 0%, rgba(244, 135, 138, 0.55), transparent 36%),
++    radial-gradient(circle at 0% 65%, rgba(244, 135, 138, 0.3), transparent 34%), var(--bg);
++  background-attachment: fixed;
++}
++html[data-theme="dark"] .rb-page {
++  background: radial-gradient(circle at 100% 0%, rgba(200, 50, 59, 0.35), transparent 40%),
++    radial-gradient(circle at 0% 70%, rgba(122, 29, 36, 0.5), transparent 38%), var(--bg);
++  background-attachment: fixed;
++}
++
++/* top bar + nav */
++.rb-topbar, .pf-topbar { border-bottom: 2px solid var(--line); }
++.rb-wordmark, .rb-logo { font-size: 1.75rem; }
++.rb-nav a { font-weight: 700; border-bottom-width: 3px; }
++.rb-nav a[aria-current="page"] { border-bottom-color: var(--cta); }
++.mp-tabbar { border-bottom: 0; }
++
++/* tabs + buttons: outlined, sticker style */
++.mp-tabs { border: 2px solid var(--line); box-shadow: 3px 3px 0 var(--line); }
++.mp-tabs button.on { background: var(--cta); color: var(--on-cta); }
++.rb-btn { border: 2px solid var(--line); font-weight: 700; }
++.rb-toolbar-search input { border: 2px solid var(--line); }
++.rb-card-cuisine { background: var(--cta); color: var(--on-cta); border: 2px solid var(--line); }
++
++/* recipe cards */
++.rb-card { border: 2px solid var(--line); border-radius: 28px; padding: 10px; box-shadow: 5px 5px 0 var(--line); transition: transform 0.15s, box-shadow 0.15s; }
++.rb-card:hover { transform: translate(-2px, -3px); border-color: var(--line); box-shadow: 8px 9px 0 var(--cta); }
++.rb-card-media { height: 170px; border-radius: 20px; border: 2px solid var(--line); }
++.rb-card-body h3 { font-size: 1.15rem; }
++.rb-card-placeholder { position: relative; overflow: hidden; background: var(--tone-soft, var(--media-bg)); }
++html[data-theme="dark"] .rb-card-placeholder { background: color-mix(in srgb, var(--tone-soft, #f6c453) 40%, #240d10); }
++.rb-card-placeholder::before { content: ""; position: absolute; width: 170px; height: 170px; border-radius: 50%; right: -60px; top: -70px; background: rgba(255, 246, 223, 0.5); }
++.rb-card-placeholder::after { content: ""; position: absolute; width: 120px; height: 120px; border-radius: 50%; left: -40px; bottom: -50px; border: 3px solid var(--ink); opacity: 0.18; }
++.rb-card-placeholder svg { position: relative; z-index: 1; width: 96px; height: 96px; color: var(--ink); }
++.sr-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.55rem 0.6rem 0; }
++.sr-chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.18rem 0.6rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--raise); font: 700 0.72rem var(--font-body); color: var(--ink); }
++.sr-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--cta); }
++.sr-chip[data-level="easy"] i { background: #3f8f4f; }
++.sr-chip[data-level="medium"] i { background: #e8a317; }
++.sr-chip[data-level="hard"] i { background: #c8323b; }
++
++/* recipes banner */
++.sr-banner { max-width: 1180px; margin: 1.1rem auto 0; padding: 0 2rem; box-sizing: border-box; }
++.sr-banner-in { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;
++  padding: 1.8rem 2.2rem; border: 2px solid #2b1411; border-radius: 32px; background: var(--sun); color: #2b1411; box-shadow: 6px 6px 0 #2b1411; }
++.sr-banner-in::after { content: ""; position: absolute; right: -50px; top: -70px; width: 220px; height: 220px; border-radius: 50%; background: var(--blush); opacity: 0.85; }
++.sr-banner-in > * { position: relative; z-index: 1; }
++.sr-banner h2 { margin: 0; font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1; color: #2b1411; }
++.sr-banner p { margin: 0.45rem 0 0; font-weight: 600; }
++.sr-banner-btn { padding: 0.8rem 1.4rem; border-radius: 999px; background: #2b1411; color: #fff6df !important; font-weight: 800; text-decoration: none; }
++.sr-banner-btn:hover { background: #7a1d24; }
++@media (max-width: 760px) { .sr-banner { padding: 0 1rem; } .sr-banner-in { padding: 1.3rem; } }
