@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { Clock } from "lucide-react";
 import Avatar, { TONES, hash } from "./Avatar";
 import type { RecipeSummary } from "./RecipesBrowser";
 
 // soft tints for the light theme; the darker TONES are used in dark mode
-const PASTELS = ["#ffefc2", "#eadff9", "#ffdccf", "#d6ecfa", "#d9f1de", "#fcdde8"];
+const PASTELS = ["#f6c453", "#f4878a", "#f9b8a3", "#ee6a4f", "#fbe3a6", "#cfe3b5"];
 
 export type CardAction = { label: string; href?: string; onClick?: () => void; danger?: boolean };
 
@@ -108,7 +109,10 @@ export default function RecipeCard({
             style={{ "--tone": TONES[hash(recipe.name) % TONES.length], "--tone-soft": PASTELS[hash(recipe.name) % PASTELS.length] } as React.CSSProperties}
             aria-hidden="true"
           >
-            {recipe.name.charAt(0)}
+            <svg viewBox="0 0 96 96" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 46h68c0 18-14 30-34 30S14 64 14 46Z" fill="rgba(255,246,223,.6)" />
+              <path d="M34 22c-4 5 4 8 0 13M48 18c-4 5 4 9 0 14M62 22c-4 5 4 8 0 13" />
+            </svg>
           </div>
         )}
 
@@ -138,6 +142,17 @@ export default function RecipeCard({
         <h3>{recipe.name}</h3>
         <p>{recipe.description}</p>
       </div>
+
+      {(recipe.prepTimeMinutes || recipe.difficulty) && (
+        <div className="sr-meta">
+          {recipe.prepTimeMinutes ? (
+            <span className="sr-chip"><Clock size={12} aria-hidden="true" />{recipe.prepTimeMinutes} min</span>
+          ) : null}
+          {recipe.difficulty && (
+            <span className="sr-chip" data-level={recipe.difficulty}><i aria-hidden="true" />{recipe.difficulty}</span>
+          )}
+        </div>
+      )}
 
       <div className="rb-card-bar">
         <div
