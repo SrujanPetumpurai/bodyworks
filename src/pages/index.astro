@@ -1,6 +1,5 @@
 ---
 export const prerender = false;
-import AccountMenu from "../components/AccountMenu";
 import LandingHero from "../components/landing/LandingHero";
 import "../styles/recipes.css";
 import "../styles/forms.css";
@@ -11,7 +10,7 @@ import "../styles/sunrise.css";
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <script is:inline>try{var t=localStorage.getItem("bw-theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="light"}</script>
+    <script is:inline>try{var t=localStorage.getItem("bw-theme");if(t!=="light"&&t!=="dark"&&t!=="night")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";var h=document.documentElement;h.dataset.theme=t==="night"?"dark":t;if(t==="night")h.dataset.palette="night";else delete h.dataset.palette}catch(e){document.documentElement.dataset.theme="light"}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Bodyworks — plan your workouts and your meals</title>
     <meta name="description" content="Plan your workouts, save recipes, and build a healthier routine with Bodyworks." />
@@ -24,7 +23,9 @@ import "../styles/sunrise.css";
           <a href="/workouts">Workouts</a>
           <a href="/recipes">Recipes</a>
         </nav>
-        <AccountMenu client:load />
+        <a href="/" class="lp-logo" aria-label="Bodyworks home">
+          <img src="/logo-nav.png" alt="Bodyworks" width="88" height="72" />
+        </a>
       </header>
       <main class="lp-main">
         <LandingHero client:load />

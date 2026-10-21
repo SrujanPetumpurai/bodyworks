@@ -55,3 +55,20 @@
   .lp-top, .lp-main { padding-left: 1rem; padding-right: 1rem; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition-duration: 0.01ms !important; } }
+
+/* Landing background: food + gym illustration (dark theme gets a scrim so text stays readable) */
+html:not([data-theme="dark"]) .rb-page.lp {
+  background: url("/bg-food-gym.jpg") center / cover no-repeat fixed, #fbe3a6;
+}
+html[data-theme="dark"] .rb-page.lp {
+  background: linear-gradient(rgba(36, 13, 16, 0.86), rgba(36, 13, 16, 0.86)), url("/bg-food-gym.jpg") center / cover no-repeat fixed, #240d10;
+}
+
+/* Logo (icon + name) in the top-right of the landing header */
+.lp-logo { display: block; margin-left: auto; line-height: 0; padding: 4px 12px; border: 2px solid var(--line); border-radius: 18px; background: #fff6df; box-shadow: 4px 4px 0 var(--line); }
+.lp-logo img { display: block; height: 64px; width: auto; }
+@media (max-width: 860px) { .lp-logo img { height: 52px; } }
+
+/* Night theme: the supplied Japanese night illustration, with gym icons mixed in */
+html[data-palette="night"] .rb-page.lp { background: url("/bg-night-gym.jpg") center / cover no-repeat fixed, #1f262b; }
+html[data-palette="night"] .lp-logo { background: #fff6df; }

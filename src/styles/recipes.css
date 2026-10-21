@@ -547,3 +547,40 @@ html:not([data-theme="dark"]) .rb-page { background:
 
 /* the top bar's blur makes it its own layer; lift it so the account menu opens above the sticky tab bar */
 .rb-topbar, .pf-topbar { position: relative; z-index: 40; }
+
+/* Recipes page background: food-only illustration (scoped so workouts/profile keep theirs) */
+html:not([data-theme="dark"]) .rb-page.rb-recipes {
+  background: url("/bg-food.jpg") center / cover no-repeat fixed, #fbe3a6;
+}
+html[data-theme="dark"] .rb-page.rb-recipes {
+  background: linear-gradient(rgba(36, 13, 16, 0.86), rgba(36, 13, 16, 0.86)), url("/bg-food.jpg") center / cover no-repeat fixed, #240d10;
+}
+
+html[data-palette="night"] .rb-page.rb-recipes { background: url("/bg-night.jpg") center / cover no-repeat fixed, #1f262b; }
+
+/* ---------- recipes toolbar: tabs left, search + filters right, aligned to the card grid ---------- */
+.rb-page.rb-recipes .rb-bar { padding-top: 1.5rem; padding-bottom: 0.9rem; }
+.rb-page.rb-recipes .mp-tabbar {
+  position: static; max-width: none; margin: 0; padding: 0; gap: 0.75rem;
+  background: transparent; border: 0; -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.rb-page.rb-recipes .mp-tabs {
+  height: 48px; box-sizing: border-box; align-items: stretch; padding: 4px;
+  background: var(--paper); border: 2px solid var(--line); box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.rb-page.rb-recipes .mp-tabs button { padding: 0 1.3rem; font-size: 0.92rem; }
+.rb-page.rb-recipes .mp-tabbar-actions { gap: 0.6rem; flex: 1 1 auto; justify-content: flex-end; }
+.rb-page.rb-recipes .rb-toolbar-search { flex: 0 1 380px; }
+.rb-page.rb-recipes .rb-toolbar-search svg { z-index: 1; left: 1.1rem; color: var(--ink); }
+.rb-page.rb-recipes .rb-toolbar-search input {
+  height: 48px; padding: 0 1.1rem 0 2.8rem; background: var(--paper); border: 2px solid var(--line);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.rb-page.rb-recipes .rb-filter-btn { height: 48px; box-sizing: border-box; padding: 0 1.3rem; background: var(--paper); }
+@media (max-width: 760px) {
+  .rb-page.rb-recipes .rb-bar { padding-top: 1rem; }
+  .rb-page.rb-recipes .mp-tabbar-actions { flex: 1 1 100%; }
+  .rb-page.rb-recipes .rb-toolbar-search { flex: 1 1 0; }
+}
+.rb-page.rb-recipes .mp-tabbar-actions > a.rb-btn { height: 48px; box-sizing: border-box; display: inline-flex; align-items: center; padding: 0 1.3rem; background: var(--paper); }

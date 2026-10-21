@@ -226,7 +226,7 @@ export default function RecipesBrowser({
   const tabClass = (on: boolean) => (on ? "on" : "");
 
   return (
-    <div className="rb-page">
+    <div className="rb-page rb-recipes">
       <header className="rb-topbar">
         <a href="/" className="rb-wordmark">bodyworks</a>
         <nav className="rb-nav" aria-label="Main">
@@ -236,6 +236,7 @@ export default function RecipesBrowser({
         <AccountMenu />
       </header>
 
+      <div className="rb-container rb-bar">
       <div className="mp-tabbar">
         <div className="mp-tabs" role="tablist" aria-label="Recipes sections">
           {signedIn && (
@@ -268,18 +269,7 @@ export default function RecipesBrowser({
           </button>
         </div>
       </div>
-
-      {!planInView && (
-        <section className="sr-banner" aria-label="Recipes overview">
-          <div className="sr-banner-in">
-            <div>
-              <h2>{view === "discover" ? "What’s cooking today?" : "Your recipe book"}</h2>
-              <p>{filtered.length} {filtered.length === 1 ? "recipe" : "recipes"} ready to cook{anyActive ? " with your filters" : ""}.</p>
-            </div>
-            <a className="sr-banner-btn" href={signedIn ? "/recipes/new" : "/auth"}>{signedIn ? "Add a recipe" : "Sign in to add yours"}</a>
-          </div>
-        </section>
-      )}
+      </div>
 
       <div className="rb-container">
         {saveError && <p className="rb-msg" role="alert">{saveError}</p>}

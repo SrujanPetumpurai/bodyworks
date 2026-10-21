@@ -335,3 +335,10 @@ html[data-theme="dark"] .rb-page.wk-page {
 }
 @media (prefers-reduced-motion: reduce) { .wk-tile, .wk-cell, .wk-tile::after, .wk-check { transition: none; } .wk-tile:hover, .wk-tile.armed { transform: none; } }
 .wk-row .wk-field:first-child { flex: 1.5; }
+
+/* Workouts page backgrounds: food + gym illustration per theme */
+html:not([data-theme="dark"]) .rb-page.wk-page { background: url("/bg-food-gym.jpg") center / cover no-repeat fixed, #fbe3a6; }
+html[data-theme="dark"] .rb-page.wk-page {
+  background: linear-gradient(rgba(36, 13, 16, 0.86), rgba(36, 13, 16, 0.86)), url("/bg-food-gym.jpg") center / cover no-repeat fixed, #240d10;
+}
+html[data-palette="night"] .rb-page.wk-page { background: url("/bg-night-gym.jpg") center / cover no-repeat fixed, #1f262b; }

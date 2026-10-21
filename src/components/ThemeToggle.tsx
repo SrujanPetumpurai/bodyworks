@@ -1,21 +1,38 @@
 import { useEffect, useState } from "react";
-import { Moon, Sun } from "lucide-react";
+import { Moon, MoonStar, Sun } from "lucide-react";
 
-type Theme = "light" | "dark";
+type Theme = "light" | "dark" | "night";
 
-// <html data-theme> is set before first paint by the inline script in each page <head>
-// (saved choice, else the system setting). This flips it and remembers the choice.
+// "night" is a dark-family theme: <html data-theme="dark" data-palette="night">, so every existing
+// dark style still applies and the night palette only overrides colours and backgrounds.
+// The inline script in each page <head> sets this before first paint (saved choice, else system).
+const NEXT: Record<Theme, Theme> = { light: "dark", dark: "night", night: "light" };
+const LABEL: Record<Theme, string> = {
+  light: "Switch to dark mode",
+  dark: "Switch to night theme",
+  night: "Switch to light mode",
+};
+
+function apply(t: Theme) {
+  const h = document.documentElement;
+  h.dataset.theme = t === "night" ? "dark" : t;
+  if (t === "night") h.dataset.palette = "night";
+  else delete h.dataset.palette;
+}
+
 export default function ThemeToggle() {
   // unknown until mounted, so server and client markup match
   const [theme, setTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
-    setTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+    const h = document.documentElement;
+    setTheme(h.dataset.palette === "night" ? "night" : h.dataset.theme === "dark" ? "dark" : "light");
   }, []);
 
   function toggle() {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
+    if (!theme) return;
+    const next = NEXT[theme];
+    apply(next);
     try {
       localStorage.setItem("bw-theme", next);
     } catch {
@@ -24,10 +41,10 @@ export default function ThemeToggle() {
     setTheme(next);
   }
 
-  const label = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+  const label = theme ? LABEL[theme] : "Change theme";
   return (
     <button type="button" className="rb-theme-btn" onClick={toggle} aria-label={label} title={label}>
-      {theme === "dark" ? <Sun size={18} aria-hidden="true" /> : theme === "light" ? <Moon size={18} aria-hidden="true" /> : null}
+      {theme === "light" ? <Moon size={18} aria-hidden="true" /> : theme === "dark" ? <MoonStar size={18} aria-hidden="true" /> : theme === "night" ? <Sun size={18} aria-hidden="true" /> : null}
     </button>
   );
 }

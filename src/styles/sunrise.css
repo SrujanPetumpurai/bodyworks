@@ -78,3 +78,20 @@ html[data-theme="dark"] .rb-card-placeholder { background: color-mix(in srgb, va
 .sr-banner-btn { padding: 0.8rem 1.4rem; border-radius: 999px; background: #2b1411; color: #fff6df !important; font-weight: 800; text-decoration: none; }
 .sr-banner-btn:hover { background: #7a1d24; }
 @media (max-width: 760px) { .sr-banner { padding: 0 1rem; } .sr-banner-in { padding: 1.3rem; } }
+
+/* "Night" theme: charcoal + lantern gold, matching the Japanese night illustration.
+   It is a dark-family theme (html[data-theme="dark"][data-palette="night"]), so all dark rules still apply. */
+html[data-palette="night"] { background: #1b2126; }
+html[data-palette="night"] .rb-page {
+  --bg: #1f262b; --paper: #283037; --raise: #323b43; --ink: #f6e6bf; --sub: #c9b88f;
+  --edge: rgba(246, 214, 140, 0.18); --rule: rgba(246, 214, 140, 0.3); --line: #e9c97f;
+  --cta: #f7d58b; --on-cta: #1b2126; --cta-hover: #ffe3a6; --warn: #ff9a8a; --rec: #ff9a8a;
+  --star: #f7d58b; --star-off: #3c464e; --media-bg: #2b343b; --ph-ink: #f6e6bf;
+  --slot-b: #f7d58b; --slot-l: #b9d18f; --slot-d: #f4a58a; --slot-s: #e9a39a; --slot-ink: #1b2126; --slot-mix: 30%;
+  --glass: rgba(40, 48, 55, 0.86); --glass-edge: rgba(246, 214, 140, 0.4);
+  --shadow-lg: 8px 8px 0 #f7d58b; --scrim: rgba(10, 14, 17, 0.78);
+  --sun: #f7d58b; --blush: #e8b27c; --maroon: #3a2a1a;
+  background: radial-gradient(circle at 100% 0%, rgba(247, 213, 139, 0.07), transparent 40%),
+    radial-gradient(circle at 0% 80%, rgba(247, 213, 139, 0.05), transparent 40%), var(--bg);
+  background-attachment: fixed;
+}
